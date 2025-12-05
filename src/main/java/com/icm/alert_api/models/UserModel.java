@@ -10,7 +10,7 @@ import java.time.ZonedDateTime;
 
 @Entity
 @Table(
-        name = "group_users",
+        name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_group_username",
