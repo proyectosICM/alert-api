@@ -12,8 +12,14 @@ import java.time.ZonedDateTime;
 @Table(
         name = "group_users",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_group_username", columnNames = {"group_id", "username"}),
-                @UniqueConstraint(name = "uk_group_dni", columnNames = {"group_id", "dni"})
+                @UniqueConstraint(
+                        name = "uk_group_username",
+                        columnNames = {"group_id", "username"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_group_dni",
+                        columnNames = {"group_id", "dni"}
+                )
         }
 )
 @Getter
@@ -22,6 +28,7 @@ import java.time.ZonedDateTime;
 @AllArgsConstructor
 @Builder
 public class UserModel {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,6 +39,7 @@ public class UserModel {
     @Column(nullable = false, length = 60)
     private String username;
 
+    @Column(length = 255)
     private String password;
 
     @Column(nullable = false, length = 15)

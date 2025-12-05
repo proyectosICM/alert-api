@@ -17,6 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class GroupModel {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,7 +31,30 @@ public class GroupModel {
     @Column(nullable = false)
     private boolean active = true;
 
-    @OneToMany(mappedBy = "group", fetch = FetchType.LAZY)
+    @ElementCollection
+    @CollectionTable(
+            name = "group_vehicle_codes",
+            joinColumns = @JoinColumn(
+                    name = "group_id",
+                    foreignKey = @ForeignKey(name = "fk_group_vehicle_group")
+            ),
+            uniqueConstraints = {
+                    @UniqueConstraint(
+                            name = "uk_group_vehicle_code",
+                            columnNames = {"group_id", "vehicle_code"}
+                    )
+            }
+    )
+    @Column(name = "vehicle_code", nullable = false, length = 50)
+    @Builder.Default
+    private Set<String> vehicleCodes = new HashSet<>();
+
+    @OneToMany(
+            mappedBy = "group",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     @Builder.Default
     private Set<UserModel> users = new HashSet<>();
 
