@@ -4,10 +4,10 @@ import com.icm.alert_api.dto.group.CreateGroupRequest;
 import com.icm.alert_api.dto.group.GroupDetailDto;
 import com.icm.alert_api.dto.group.GroupSummaryDto;
 import com.icm.alert_api.dto.group.UpdateGroupRequest;
-import com.icm.alert_api.mappers.GroupMapper;
-import com.icm.alert_api.models.GroupModel;
-import com.icm.alert_api.repositories.GroupRepository;
-import com.icm.alert_api.services.GroupService;
+import com.icm.alert_api.mappers.NotificationGroupMapper;
+import com.icm.alert_api.models.NotificationGroupModel;
+import com.icm.alert_api.repositories.NotificationGroupRepository;
+import com.icm.alert_api.services.NotificationGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,10 +19,10 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class GroupServiceImpl implements GroupService {
+public class NotificationGroupServiceImpl implements NotificationGroupService {
 
-    private final GroupRepository groupRepository;
-    private final GroupMapper groupMapper;
+    private final NotificationGroupRepository groupRepository;
+    private final NotificationGroupMapper groupMapper;
     // Si luego tienes GroupUserRepository / AlertRepository, puedes inyectarlos aquí
     // private final GroupUserRepository groupUserRepository;
     // private final AlertRepository alertRepository;
@@ -31,8 +31,8 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupDetailDto create(CreateGroupRequest request) {
-        GroupModel model = groupMapper.toEntity(request);
-        GroupModel saved = groupRepository.save(model);
+        NotificationGroupModel model = groupMapper.toEntity(request);
+        NotificationGroupModel saved = groupRepository.save(model);
 
         long usersCount = 0L;     // TODO: cuando tengas usuarios reales
         long alertsLast24h = 0L;  // TODO: cuando tengas alertas
@@ -42,13 +42,13 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public GroupDetailDto update(Long groupId, UpdateGroupRequest request) {
-        GroupModel model = groupRepository.findById(groupId)
+        NotificationGroupModel model = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
         // patch con MapStruct
         groupMapper.updateEntityFromDto(request, model);
 
-        GroupModel updated = groupRepository.save(model);
+        NotificationGroupModel updated = groupRepository.save(model);
 
         long usersCount = 0L;     // TODO
         long alertsLast24h = 0L;  // TODO
@@ -80,7 +80,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     @Transactional(readOnly = true)
     public Page<GroupSummaryDto> search(String q, Pageable pageable) {
-        Page<GroupModel> page;
+        Page<NotificationGroupModel> page;
 
         if (q == null || q.isBlank()) {
             page = groupRepository.findAll(pageable);

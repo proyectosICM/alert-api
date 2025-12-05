@@ -58,7 +58,7 @@ public class UserModel {
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_group_user_group")
     )
-    private GroupModel group;
+    private NotificationGroupModel group;
 
     @Version
     private Long version;

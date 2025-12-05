@@ -16,7 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GroupModel {
+public class NotificationGroupModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -5,9 +5,9 @@ import com.icm.alert_api.dto.user.GroupUserDetailDto;
 import com.icm.alert_api.dto.user.GroupUserSummaryDto;
 import com.icm.alert_api.dto.user.UpdateGroupUserRequest;
 import com.icm.alert_api.mappers.UserMapper;
-import com.icm.alert_api.models.GroupModel;
+import com.icm.alert_api.models.NotificationGroupModel;
 import com.icm.alert_api.models.UserModel;
-import com.icm.alert_api.repositories.GroupRepository;
+import com.icm.alert_api.repositories.NotificationGroupRepository;
 import com.icm.alert_api.repositories.UserRepository;
 import com.icm.alert_api.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -24,14 +24,14 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final GroupRepository groupRepository;
+    private final NotificationGroupRepository groupRepository;
     private final UserMapper groupUserMapper;
 
     // ============== CRUD ==============
 
     @Override
     public GroupUserDetailDto create(Long groupId, CreateGroupUserRequest request) {
-        GroupModel group = groupRepository.findById(groupId)
+        NotificationGroupModel group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
         UserModel user = groupUserMapper.toEntity(request);

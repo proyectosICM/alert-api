@@ -6,9 +6,9 @@ import com.icm.alert_api.dto.alert.CreateAlertRequest;
 import com.icm.alert_api.dto.alert.UpdateAlertRequest;
 import com.icm.alert_api.mappers.AlertMapper;
 import com.icm.alert_api.models.AlertModel;
-import com.icm.alert_api.models.GroupModel;
+import com.icm.alert_api.models.NotificationGroupModel;
 import com.icm.alert_api.repositories.AlertRepository;
-import com.icm.alert_api.repositories.GroupRepository;
+import com.icm.alert_api.repositories.NotificationGroupRepository;
 import com.icm.alert_api.services.AlertService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,7 +26,7 @@ import java.util.Set;
 public class AlertServiceImpl implements AlertService {
 
     private final AlertRepository alertRepository;
-    private final GroupRepository groupRepository;
+    private final NotificationGroupRepository groupRepository;
     private final AlertMapper alertMapper;
 
     // ============== CRUD ==============ac
@@ -70,7 +70,7 @@ public class AlertServiceImpl implements AlertService {
     @Override
     @Transactional(readOnly = true)
     public Page<AlertSummaryDto> listByGroup(Long groupId, Pageable pageable) {
-        GroupModel group = groupRepository.findById(groupId)
+        NotificationGroupModel group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
         Set<String> vehicleCodes = group.getVehicleCodes();
@@ -93,7 +93,7 @@ public class AlertServiceImpl implements AlertService {
             ZonedDateTime to,
             Pageable pageable
     ) {
-        GroupModel group = groupRepository.findById(groupId)
+        NotificationGroupModel group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
         Set<String> vehicleCodes = group.getVehicleCodes();
@@ -112,7 +112,7 @@ public class AlertServiceImpl implements AlertService {
     @Override
     @Transactional(readOnly = true)
     public long countLast24hForGroup(Long groupId) {
-        GroupModel group = groupRepository.findById(groupId)
+        NotificationGroupModel group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
         Set<String> vehicleCodes = group.getVehicleCodes();

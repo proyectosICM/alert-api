@@ -4,7 +4,7 @@ import com.icm.alert_api.dto.group.CreateGroupRequest;
 import com.icm.alert_api.dto.group.GroupDetailDto;
 import com.icm.alert_api.dto.group.GroupSummaryDto;
 import com.icm.alert_api.dto.group.UpdateGroupRequest;
-import com.icm.alert_api.services.GroupService;
+import com.icm.alert_api.services.NotificationGroupService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,9 +18,9 @@ import org.springframework.validation.annotation.Validated;
 @RequestMapping("/api/groups")
 @RequiredArgsConstructor
 @Validated
-public class GroupController {
+public class NotificationGroupController {
 
-    private final GroupService groupService;
+    private final NotificationGroupService groupService;
 
     // ============== CREATE ==============
 
