@@ -29,7 +29,7 @@ public class AlertServiceImpl implements AlertService {
     private final GroupRepository groupRepository;
     private final AlertMapper alertMapper;
 
-    // ============== CRUD ==============
+    // ============== CRUD ==============ac
 
     @Override
     public AlertDetailDto create(CreateAlertRequest request) {
