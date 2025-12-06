@@ -13,7 +13,8 @@ public interface AlertMapper {
     // ======= Create DTO -> Entity =======
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "receivedAt", ignore = true)          // lo pone @CreationTimestamp
+    @Mapping(target = "createdAt", ignore = true)       // lo pone @CreationTimestamp
+    @Mapping(target = "updatedAt", ignore = true)       // lo pone @UpdateTimestamp
     @Mapping(target = "acknowledged", constant = "false")   // recién creada = no atendida
     AlertModel toEntity(CreateAlertRequest request);
 
@@ -21,7 +22,10 @@ public interface AlertMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "receivedAt", ignore = true)          // no se toca
+    @Mapping(target = "createdAt", ignore = true)       // no se toca
+    @Mapping(target = "updatedAt", ignore = true)       // no se toca
+        // dependiendo de tu lógica, puedes permitir cambiar `acknowledged` o no:
+        // @Mapping(target = "acknowledged", ignore = true)
     void updateEntityFromDto(UpdateAlertRequest request, @MappingTarget AlertModel entity);
 
     // ======= Entity -> Detail DTO =======
@@ -31,8 +35,8 @@ public interface AlertMapper {
             expression = "java(model.getEventTime() != null ? model.getEventTime().toInstant() : null)"
     )
     @Mapping(
-            target = "receivedAt",
-            expression = "java(model.getReceivedAt() != null ? model.getReceivedAt().toInstant() : null)"
+            target = "receivedAt", // en el DTO
+            expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
     )
     AlertDetailDto toDetailDto(AlertModel model);
 
@@ -43,8 +47,8 @@ public interface AlertMapper {
             expression = "java(model.getEventTime() != null ? model.getEventTime().toInstant() : null)"
     )
     @Mapping(
-            target = "receivedAt",
-            expression = "java(model.getReceivedAt() != null ? model.getReceivedAt().toInstant() : null)"
+            target = "receivedAt", // en el DTO
+            expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
     )
     AlertSummaryDto toSummaryDto(AlertModel model);
 }

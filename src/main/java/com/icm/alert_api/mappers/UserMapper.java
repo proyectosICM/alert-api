@@ -12,17 +12,17 @@ public interface UserMapper {
 
     // ======= Create DTO -> Entity =======
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "group", ignore = true)        // se setea en el service
+    @Mapping(target = "notificationGroup", ignore = true)   // se setea en el service
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "active", constant = "true")   // por defecto activo
+    @Mapping(target = "active", constant = "true")          // por defecto activo
     UserModel toEntity(CreateGroupUserRequest request);
 
     // ======= Update DTO -> Entity (patch) =======
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "group", ignore = true)        // no cambiamos el grupo vía update
+    @Mapping(target = "notificationGroup", ignore = true)   // no cambiamos el grupo vía update
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
