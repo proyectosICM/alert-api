@@ -14,16 +14,16 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserModel, Long> {
 
     // Buscar un usuario asegurando que pertenece a un grupo concreto
-    Optional<UserModel> findByIdAndGroup_Id(Long id, Long groupId);
+    Optional<UserModel> findByIdAndNotificationGroup_Id(Long id, Long groupId);
 
     // Listar usuarios de un grupo (sin filtro de texto)
-    Page<UserModel> findByGroup_Id(Long groupId, Pageable pageable);
+    Page<UserModel> findByNotificationGroup_Id(Long groupId, Pageable pageable);
 
     // Búsqueda por texto dentro de un grupo (fullName / username / dni)
     @Query("""
            SELECT u
            FROM UserModel u
-           WHERE u.group.id = :groupId
+           WHERE u.notificationGroup.id = :groupId
              AND (
                 LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR
                 LOWER(u.username) LIKE LOWER(CONCAT('%', :q, '%')) OR
@@ -35,5 +35,5 @@ public interface UserRepository extends JpaRepository<UserModel, Long> {
                                   Pageable pageable);
 
     // Para KPIs de grupos si luego lo quieres usar
-    long countByGroup_Id(Long groupId);
+    long countByNotificationGroup_Id(Long groupId);
 }
