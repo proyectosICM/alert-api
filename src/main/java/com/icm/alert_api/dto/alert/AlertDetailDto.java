@@ -12,9 +12,23 @@ public class AlertDetailDto {
     Long id;
 
     String vehicleCode;
-    String type;
+    String licensePlate;
+
+    String alertType;       // IMPACTO, CHECKLIST, etc.
+    String alertSubtype;    // "Sensor Digital Impacto", "Máquina sin condiciones", etc.
+
+    String templateSource;  // ALARM_EMAIL, CHECKLIST_EMAIL, ...
+
+    String severity;        // INFO, WARNING, CRITICAL, ...
+
     String subject;
-    String area;
+
+    String plant;           // ABI-MA-PE-T1-Ate Beer
+    String area;            // PATIO, BAHIAS CARPA LATAS, LINEA 10, ...
+
+    String ownerOrVendor;   // EQUANS, etc.
+    String brandModel;      // Toyota/32-8FG25, Linde/H40T-02, ...
+
     String operatorName;
     String operatorId;
 
@@ -24,13 +38,14 @@ public class AlertDetailDto {
     Instant eventTime;
 
     /**
-     * Momento en que el sistema registró la alerta.
+     * Momento en que el sistema registró la alerta (normalmente createdAt).
      */
     Instant receivedAt;
 
-    String shortDescription;
+    String shortDescription;  // resumen corto
+    String details;           // texto largo normalizado (markdown/PLAIN)
 
-    String rawPayload;
+    String rawPayload;        // HTML / texto crudo del correo
 
     boolean acknowledged;
 }

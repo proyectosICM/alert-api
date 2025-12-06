@@ -5,7 +5,11 @@ import com.icm.alert_api.dto.alert.AlertSummaryDto;
 import com.icm.alert_api.dto.alert.CreateAlertRequest;
 import com.icm.alert_api.dto.alert.UpdateAlertRequest;
 import com.icm.alert_api.models.AlertModel;
-import org.mapstruct.*;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 @Mapper(componentModel = "spring")
 public interface AlertMapper {
@@ -13,19 +17,20 @@ public interface AlertMapper {
     // ======= Create DTO -> Entity =======
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)       // lo pone @CreationTimestamp
-    @Mapping(target = "updatedAt", ignore = true)       // lo pone @UpdateTimestamp
+    @Mapping(target = "createdAt", ignore = true)           // @CreationTimestamp
+    @Mapping(target = "updatedAt", ignore = true)           // @UpdateTimestamp
     @Mapping(target = "acknowledged", constant = "false")   // recién creada = no atendida
     AlertModel toEntity(CreateAlertRequest request);
+    // Campos como vehicleCode, licensePlate, alertType, plant, etc.
+    // se mapean automáticamente por nombre.
 
-    // ======= Update DTO -> Entity (patch) =======
+    // ======= Update DTO -> Entity (PATCH) =======
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)       // no se toca
-    @Mapping(target = "updatedAt", ignore = true)       // no se toca
-        // dependiendo de tu lógica, puedes permitir cambiar `acknowledged` o no:
-        // @Mapping(target = "acknowledged", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+        // acknowledged se actualiza si viene en el request (Boolean)
     void updateEntityFromDto(UpdateAlertRequest request, @MappingTarget AlertModel entity);
 
     // ======= Entity -> Detail DTO =======
@@ -35,10 +40,14 @@ public interface AlertMapper {
             expression = "java(model.getEventTime() != null ? model.getEventTime().toInstant() : null)"
     )
     @Mapping(
-            target = "receivedAt", // en el DTO
+            target = "receivedAt",
             expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
     )
     AlertDetailDto toDetailDto(AlertModel model);
+    // El resto: vehicleCode, licensePlate, alertType, alertSubtype,
+    // templateSource, severity, plant, area, ownerOrVendor, brandModel,
+    // operatorName, operatorId, shortDescription, details, rawPayload,
+    // acknowledged => se mapean por nombre.
 
     // ======= Entity -> Summary DTO =======
 
@@ -47,7 +56,7 @@ public interface AlertMapper {
             expression = "java(model.getEventTime() != null ? model.getEventTime().toInstant() : null)"
     )
     @Mapping(
-            target = "receivedAt", // en el DTO
+            target = "receivedAt",
             expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
     )
     AlertSummaryDto toSummaryDto(AlertModel model);

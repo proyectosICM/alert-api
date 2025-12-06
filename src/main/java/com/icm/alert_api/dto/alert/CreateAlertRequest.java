@@ -11,24 +11,57 @@ import java.time.ZonedDateTime;
 public class CreateAlertRequest {
 
     /**
-     * Código / placa del montacargas (ej: "MG069").
+     * Código / placa del montacargas (ej: "MG069" o "FG22010").
      */
     @NotBlank
     @Size(max = 50)
     private String vehicleCode;
 
     /**
-     * Tipo de alerta (IMPACTO, EXCESO_VELOCIDAD, etc.).
+     * Placa/patente visible en el correo (opcional si coincide con vehicleCode).
+     */
+    @Size(max = 50)
+    private String licensePlate;
+
+    /**
+     * Tipo de alerta (IMPACTO, CHECKLIST, EXCESO_VELOCIDAD, etc.).
      */
     @NotBlank
     @Size(max = 50)
-    private String type;
+    private String alertType;
+
+    /**
+     * Subtipo / disparador: "Sensor Digital Impacto", "Máquina sin condiciones", etc.
+     */
+    @Size(max = 80)
+    private String alertSubtype;
+
+    /**
+     * Origen / plantilla del correo.
+     */
+    @Size(max = 40)
+    private String templateSource;
+
+    /**
+     * Severidad: INFO, WARNING, CRITICAL, BLOQUEA_OPERACION, etc.
+     */
+    @Size(max = 20)
+    private String severity;
 
     @Size(max = 255)
     private String subject;
 
+    @Size(max = 150)
+    private String plant;
+
     @Size(max = 100)
     private String area;
+
+    @Size(max = 150)
+    private String ownerOrVendor;
+
+    @Size(max = 150)
+    private String brandModel;
 
     @Size(max = 150)
     private String operatorName;
@@ -38,16 +71,21 @@ public class CreateAlertRequest {
 
     /**
      * Momento real del evento (el que viene en el correo).
-     * Puedes enviarlo en ISO-8601 y parsearlo en el controlador.
      */
     @NotNull
     private ZonedDateTime eventTime;
 
-    @Size(max = 500)
+    @Size(max = 1000)
     private String shortDescription;
 
     /**
-     * Payload crudo (texto completo del correo o bloque relevante).
+     * Detalle largo normalizado (por ej. lista de checks, observaciones, etc.).
      */
+    private String details;
+
+    /**
+     * Payload crudo (texto/HTML completo del correo o bloque relevante).
+     */
+    @NotBlank
     private String rawPayload;
 }

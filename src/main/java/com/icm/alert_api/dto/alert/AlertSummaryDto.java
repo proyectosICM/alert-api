@@ -12,8 +12,12 @@ public class AlertSummaryDto {
     Long id;
 
     String vehicleCode;
-    String type;
+    String licensePlate;
 
+    String alertType;
+    String severity;
+
+    String plant;
     String area;
 
     /**

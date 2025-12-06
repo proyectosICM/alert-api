@@ -6,8 +6,16 @@ import lombok.Data;
 @Data
 public class UpdateAlertRequest {
 
-    @Size(max = 500)
+    @Size(max = 1000)
     private String shortDescription;
+
+    private String details;
+
+    /**
+     * Posible actualización de severidad, si la quieres ajustar después.
+     */
+    @Size(max = 20)
+    private String severity;
 
     /**
      * Permite marcar una alerta como atendida / no atendida.
