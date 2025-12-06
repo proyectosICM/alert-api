@@ -14,17 +14,17 @@ import java.time.ZonedDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_group_username",
-                        columnNames = {"group_id", "username"}
+                        columnNames = {"notification_group_id", "username"}
                 ),
                 @UniqueConstraint(
                         name = "uk_group_dni",
-                        columnNames = {"group_id", "dni"}
+                        columnNames = {"notification_group_id", "dni"}
                 )
         },
         indexes = {
                 @Index(
                         name = "idx_group_username",
-                        columnList = "group_id, username"
+                        columnList = "notification_group_id, username"
                 )
         }
 )
