@@ -130,4 +130,22 @@ public class AlertServiceImpl implements AlertService {
         ZonedDateTime cutoff = ZonedDateTime.now().minusHours(24);
         return alertRepository.countByVehicleCodeInAndEventTimeAfter(vehicleCodes, cutoff);
     }
+
+    @Override
+    public AlertDetailDto acknowledge(Long alertId) {
+        AlertModel model = alertRepository.findById(alertId)
+                .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
+
+        // Si ya está marcada, simplemente devolvemos el detalle
+        if (!Boolean.TRUE.equals(model.getAcknowledged())) {
+            model.setAcknowledged(true);
+
+            // 👉 Si en tu entidad tienes un campo tipo "acknowledgedAt", puedes descomentar esto:
+            // model.setAcknowledgedAt(ZonedDateTime.now());
+
+            alertRepository.save(model);
+        }
+
+        return alertMapper.toDetailDto(model);
+    }
 }

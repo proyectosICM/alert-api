@@ -47,4 +47,6 @@ public interface AlertService {
      * Útil para el campo alertsLast24h del GroupDetailDto.
      */
     long countLast24hForGroup(Long groupId);
+
+    AlertDetailDto acknowledge(Long alertId);
 }

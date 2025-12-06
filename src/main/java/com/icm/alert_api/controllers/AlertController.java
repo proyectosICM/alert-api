@@ -138,4 +138,13 @@
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
             }
         }
+
+        @PostMapping("/{id}/ack")
+        public AlertDetailDto acknowledge(@PathVariable("id") Long id) {
+            try {
+                return alertService.acknowledge(id);
+            } catch (IllegalArgumentException ex) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+            }
+        }
     }
