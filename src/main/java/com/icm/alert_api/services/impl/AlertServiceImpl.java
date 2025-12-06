@@ -137,10 +137,10 @@ public class AlertServiceImpl implements AlertService {
                 .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
 
         // Si ya está marcada, simplemente devolvemos el detalle
-        if (!Boolean.TRUE.equals(model.getAcknowledged())) {
+        if (!model.isAcknowledged()) {           // 👈 AQUÍ el cambio
             model.setAcknowledged(true);
 
-            // 👉 Si en tu entidad tienes un campo tipo "acknowledgedAt", puedes descomentar esto:
+            // Si luego agregas un campo acknowledgedAt:
             // model.setAcknowledgedAt(ZonedDateTime.now());
 
             alertRepository.save(model);
