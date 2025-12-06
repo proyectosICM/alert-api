@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public GroupUserDetailDto create(Long groupId, CreateGroupUserRequest request) {
         NotificationGroupModel group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
+                .orElseThrow(() -> new IllegalArgumentException("Notification group not found: " + groupId));
 
         UserModel user = groupUserMapper.toEntity(request);
         user.setNotificationGroup(group); // muy importante para la FK
@@ -43,9 +43,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public GroupUserDetailDto update(Long groupId, Long userId, UpdateGroupUserRequest request) {
-        UserModel user = userRepository.findByIdAndGroup_Id(userId, groupId)
+        UserModel user = userRepository.findByIdAndNotificationGroup_Id(userId, groupId)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "User not found in group. userId=" + userId + ", groupId=" + groupId
+                        "User not found in notification group. userId=" + userId + ", groupId=" + groupId
                 ));
 
         // PATCH con MapStruct (ignora nulls)
@@ -57,13 +57,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteById(Long groupId, Long userId) {
-        UserModel user = userRepository.findByIdAndGroup_Id(userId, groupId)
+        UserModel user = userRepository.findByIdAndNotificationGroup_Id(userId, groupId)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "User not found in group. userId=" + userId + ", groupId=" + groupId
+                        "User not found in notification group. userId=" + userId + ", groupId=" + groupId
                 ));
 
         userRepository.delete(user);
-        // Si quisieras soft-delete:
+        // Soft-delete opcional:
         // user.setActive(false);
         // userRepository.save(user);
     }
@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public Optional<GroupUserDetailDto> findById(Long groupId, Long userId) {
-        return userRepository.findByIdAndGroup_Id(userId, groupId)
+        return userRepository.findByIdAndNotificationGroup_Id(userId, groupId)
                 .map(groupUserMapper::toDetailDto);
     }
 
@@ -83,7 +83,7 @@ public class UserServiceImpl implements UserService {
         Page<UserModel> page;
 
         if (q == null || q.isBlank()) {
-            page = userRepository.findByGroup_Id(groupId, pageable);
+            page = userRepository.findByNotificationGroup_Id(groupId, pageable);
         } else {
             String query = q.trim();
             page = userRepository.searchInGroup(groupId, query, pageable);
