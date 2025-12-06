@@ -13,6 +13,7 @@ public class GroupSummaryDto {
     String description;
     Instant createdAt;
     long usersCount;
+    long vehiclesCount;
     long alertsLast24h;
     boolean active;
 }

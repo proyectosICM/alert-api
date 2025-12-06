@@ -17,32 +17,77 @@ public interface NotificationGroupMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     // si no envían "active", por defecto true
-    @Mapping(target = "active",
-            expression = "java(request.getActive() != null ? request.getActive() : true)")
+    @Mapping(
+            target = "active",
+            expression = "java(request.getActive() != null ? request.getActive() : true)"
+    )
+    // inicializamos siempre el Set de vehicleCodes
+    @Mapping(
+            target = "vehicleCodes",
+            expression =
+                    "java(request.getVehicleCodes() != null " +
+                            "? new java.util.HashSet<>(request.getVehicleCodes()) " +
+                            ": new java.util.HashSet<>())"
+    )
     NotificationGroupModel toEntity(CreateGroupRequest request);
 
     // ======= Update DTO -> Entity (patch) =======
+    // Usamos IGNORE y luego tratamos vehicleCodes en @AfterMapping
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateEntityFromDto(UpdateGroupRequest request, @MappingTarget NotificationGroupModel entity);
+    @Mapping(target = "vehicleCodes", ignore = true) // lo manejamos a mano
+    void updateEntityFromDto(UpdateGroupRequest request,
+                             @MappingTarget NotificationGroupModel entity);
+
+    @AfterMapping
+    default void afterUpdate(UpdateGroupRequest request,
+                             @MappingTarget NotificationGroupModel entity) {
+        // Regla:
+        // - vehicleCodes == null  -> no tocar
+        // - vehicleCodes == []    -> limpiar todos
+        // - vehicleCodes con data -> reemplazar
+        if (request.getVehicleCodes() != null) {
+            entity.getVehicleCodes().clear();
+            entity.getVehicleCodes().addAll(request.getVehicleCodes());
+        }
+    }
 
     // ======= Entity -> Detail DTO =======
+    // Detail incluye lista completa de vehicleCodes
 
     @Mapping(target = "usersCount", expression = "java(usersCount)")
     @Mapping(target = "alertsLast24h", expression = "java(alertsLast24h)")
-    @Mapping(target = "createdAt",
-            expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)")
-    GroupDetailDto toDetailDto(NotificationGroupModel model, long usersCount, long alertsLast24h);
+    @Mapping(
+            target = "createdAt",
+            expression =
+                    "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
+    )
+        // MapStruct mapea vehicleCodes automáticamente porque el nombre y tipo coinciden:
+        // Set<String> vehicleCodes
+    GroupDetailDto toDetailDto(NotificationGroupModel model,
+                               long usersCount,
+                               long alertsLast24h);
 
     // ======= Entity -> Summary DTO =======
+    // Summary NO lleva lista, solo contador de vehículos
 
     @Mapping(target = "usersCount", expression = "java(usersCount)")
     @Mapping(target = "alertsLast24h", expression = "java(alertsLast24h)")
-    @Mapping(target = "createdAt",
-            expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)")
-    GroupSummaryDto toSummaryDto(NotificationGroupModel model, long usersCount, long alertsLast24h);
+    @Mapping(
+            target = "createdAt",
+            expression =
+                    "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
+    )
+    @Mapping(
+            target = "vehiclesCount",
+            expression =
+                    "java(model.getVehicleCodes() != null ? model.getVehicleCodes().size() : 0L)"
+    )
+    GroupSummaryDto toSummaryDto(NotificationGroupModel model,
+                                 long usersCount,
+                                 long alertsLast24h);
 }

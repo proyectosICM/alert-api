@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Value
 @Builder
@@ -15,4 +16,5 @@ public class GroupDetailDto {
     boolean active;
     long usersCount;
     long alertsLast24h;
+    Set<String> vehicleCodes;
 }

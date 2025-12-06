@@ -3,6 +3,8 @@ package com.icm.alert_api.dto.group;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.Set;
+
 @Data
 public class UpdateGroupRequest {
 
@@ -13,4 +15,7 @@ public class UpdateGroupRequest {
     private String description;
 
     private Boolean active;
+
+    @Size(max = 500)
+    private Set<@Size(max = 50) String> vehicleCodes;
 }

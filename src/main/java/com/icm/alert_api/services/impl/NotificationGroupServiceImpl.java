@@ -23,7 +23,7 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
 
     private final NotificationGroupRepository groupRepository;
     private final NotificationGroupMapper groupMapper;
-    // Si luego tienes GroupUserRepository / AlertRepository, puedes inyectarlos aquí
+    // Más adelante puedes inyectar repos de usuarios / alertas:
     // private final GroupUserRepository groupUserRepository;
     // private final AlertRepository alertRepository;
 
@@ -86,10 +86,11 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
             page = groupRepository.findAll(pageable);
         } else {
             String query = q.trim();
-            page = groupRepository
-                    .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                            query, query, pageable
-                    );
+            page = groupRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                    query,
+                    query,
+                    pageable
+            );
         }
 
         return page.map(model -> {

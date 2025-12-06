@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.Set;
+
 @Data
 public class CreateGroupRequest {
 
@@ -15,4 +17,7 @@ public class CreateGroupRequest {
     private String description;
 
     private Boolean active;
+
+    @Size(max = 500)
+    private Set<@Size(max = 50) String> vehicleCodes;
 }
