@@ -32,6 +32,8 @@ public interface AlertRepository extends JpaRepository<AlertModel, Long> {
             Pageable pageable
     );
 
+    Page<AlertModel> findAllByOrderByEventTimeDesc(Pageable pageable);
+
     /**
      * KPI: cuántas alertas han ocurrido desde un instante dado
      * (ej: now - 24h) para una lista de montacargas.

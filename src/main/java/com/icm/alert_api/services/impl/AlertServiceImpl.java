@@ -65,6 +65,13 @@ public class AlertServiceImpl implements AlertService {
         alertRepository.deleteById(alertId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AlertSummaryDto> listAll(Pageable pageable) {
+        Page<AlertModel> page = alertRepository.findAllByOrderByEventTimeDesc(pageable);
+        return page.map(alertMapper::toSummaryDto);
+    }
+
     // ============== Historial por grupo ==============
 
     @Override

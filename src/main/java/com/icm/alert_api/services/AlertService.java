@@ -22,6 +22,8 @@ public interface AlertService {
 
     void deleteById(Long alertId);
 
+    Page<AlertSummaryDto> listAll(Pageable pageable);
+
     // ======= Historial por grupo =======
 
     /**
