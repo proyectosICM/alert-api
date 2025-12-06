@@ -66,14 +66,13 @@ public interface NotificationGroupMapper {
             expression =
                     "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
     )
-        // MapStruct mapea vehicleCodes automáticamente porque el nombre y tipo coinciden:
-        // Set<String> vehicleCodes
+        // vehicleCodes se mapea automático por nombre / tipo
     GroupDetailDto toDetailDto(NotificationGroupModel model,
                                long usersCount,
                                long alertsLast24h);
 
     // ======= Entity -> Summary DTO =======
-    // Summary NO lleva lista, solo contador de vehículos
+    // Summary ahora lleva contador + lista de vehicleCodes
 
     @Mapping(target = "usersCount", expression = "java(usersCount)")
     @Mapping(target = "alertsLast24h", expression = "java(alertsLast24h)")
@@ -86,6 +85,14 @@ public interface NotificationGroupMapper {
             target = "vehiclesCount",
             expression =
                     "java(model.getVehicleCodes() != null ? model.getVehicleCodes().size() : 0L)"
+    )
+    // 👇 ESTA ES LA PARTE NUEVA IMPORTANTE
+    @Mapping(
+            target = "vehicleCodes",
+            expression =
+                    "java(model.getVehicleCodes() != null " +
+                            "? new java.util.HashSet<>(model.getVehicleCodes()) " +
+                            ": java.util.Collections.emptySet())"
     )
     GroupSummaryDto toSummaryDto(NotificationGroupModel model,
                                  long usersCount,
