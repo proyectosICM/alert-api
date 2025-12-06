@@ -3,6 +3,7 @@ package com.icm.alert_api.models;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
 
@@ -16,7 +17,11 @@ import java.time.ZonedDateTime;
                 ),
                 @Index(
                         name = "idx_alert_type_time",
-                        columnList = "type, event_time"
+                        columnList = "alert_type, event_time"
+                ),
+                @Index(
+                        name = "idx_alert_ack_time",
+                        columnList = "acknowledged, event_time"
                 )
         }
 )
@@ -37,7 +42,7 @@ public class AlertModel {
     @Column(name = "vehicle_code", nullable = false, length = 50)
     private String vehicleCode;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "alert_type", nullable = false, length = 50)
     private String type; // IMPACTO, EXCESO_VELOCIDAD, etc.
 
     @Column(length = 255)
@@ -55,10 +60,6 @@ public class AlertModel {
     @Column(name = "event_time", nullable = false)
     private ZonedDateTime eventTime;
 
-    @CreationTimestamp
-    @Column(name = "received_at", nullable = false, updatable = false)
-    private ZonedDateTime receivedAt;
-
     @Column(length = 500)
     private String shortDescription;
 
@@ -68,4 +69,12 @@ public class AlertModel {
 
     @Column(nullable = false)
     private boolean acknowledged = false;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private ZonedDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private ZonedDateTime updatedAt;
 }

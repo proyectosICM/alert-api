@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.validation.annotation.Validated;
 
 @RestController
-@RequestMapping("/api/groups")
+@RequestMapping("/api/notification-groups")
 @RequiredArgsConstructor
 @Validated
 public class NotificationGroupController {

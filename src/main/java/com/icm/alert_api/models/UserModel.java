@@ -20,6 +20,12 @@ import java.time.ZonedDateTime;
                         name = "uk_group_dni",
                         columnNames = {"group_id", "dni"}
                 )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_group_username",
+                        columnList = "group_id, username"
+                )
         }
 )
 @Getter
@@ -56,9 +62,9 @@ public class UserModel {
     @JoinColumn(
             name = "group_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_group_user_group")
+            foreignKey = @ForeignKey(name = "fk_user_notification_group")
     )
-    private NotificationGroupModel group;
+    private NotificationGroupModel notificationGroup;
 
     @Version
     private Long version;

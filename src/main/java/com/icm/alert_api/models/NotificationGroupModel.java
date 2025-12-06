@@ -31,12 +31,12 @@ public class NotificationGroupModel {
     @Column(nullable = false)
     private boolean active = true;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
-            name = "group_vehicle_codes",
+            name = "notification_group_vehicle_codes",
             joinColumns = @JoinColumn(
                     name = "group_id",
-                    foreignKey = @ForeignKey(name = "fk_group_vehicle_group")
+                    foreignKey = @ForeignKey(name = "fk_notification_group_vehicle")
             ),
             uniqueConstraints = {
                     @UniqueConstraint(
@@ -50,7 +50,7 @@ public class NotificationGroupModel {
     private Set<String> vehicleCodes = new HashSet<>();
 
     @OneToMany(
-            mappedBy = "group",
+            mappedBy = "notificationGroup",
             fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
             orphanRemoval = true
