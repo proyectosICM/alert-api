@@ -82,8 +82,8 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
     public Optional<GroupDetailDto> findById(Long groupId) {
         return groupRepository.findById(groupId)
                 .map(model -> {
-                    long usersCount = 0L;     // TODO: traer desde repositorio de usuarios
-                    long alertsLast24h = 0L;  // TODO: traer desde alertas
+                    long usersCount = resolveUsersCount(model.getId());
+                    long alertsLast24h = resolveAlertsLast24h(model.getId());
                     return groupMapper.toDetailDto(model, usersCount, alertsLast24h);
                 });
     }
@@ -107,8 +107,8 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
         }
 
         return page.map(model -> {
-            long usersCount = 0L;     // TODO: contar usuarios del grupo
-            long alertsLast24h = 0L;  // TODO: contar alertas 24h
+            long usersCount = resolveUsersCount(model.getId());
+            long alertsLast24h = resolveAlertsLast24h(model.getId());
             return groupMapper.toSummaryDto(model, usersCount, alertsLast24h);
         });
     }

@@ -9,8 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NotificationGroupRepository extends JpaRepository<NotificationGroupModel, Long> {
 
-    long countByNotificationGroup_Id(Long groupId);
-
     Page<NotificationGroupModel> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             String name, String description, Pageable pageable
     );
