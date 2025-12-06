@@ -7,6 +7,7 @@ import com.icm.alert_api.dto.group.UpdateGroupRequest;
 import com.icm.alert_api.mappers.NotificationGroupMapper;
 import com.icm.alert_api.models.NotificationGroupModel;
 import com.icm.alert_api.repositories.NotificationGroupRepository;
+import com.icm.alert_api.repositories.UserRepository;
 import com.icm.alert_api.services.NotificationGroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,8 +25,20 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
     private final NotificationGroupRepository groupRepository;
     private final NotificationGroupMapper groupMapper;
     // Más adelante puedes inyectar repos de usuarios / alertas:
-    // private final GroupUserRepository groupUserRepository;
+    private final UserRepository userRepository;
     // private final AlertRepository alertRepository;
+
+    // ==== Helpers internos ====
+
+    private long resolveUsersCount(Long groupId) {
+        // Cuenta cuántos UserModel están asociados a este grupo
+        return userRepository.countByNotificationGroup_Id(groupId);
+    }
+
+    private long resolveAlertsLast24h(Long groupId) {
+        // Por ahora lo dejas en 0 hasta que tengas AlertRepository
+        return 0L;
+    }
 
     // ============== CRUD ==============
 
@@ -50,8 +63,8 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
 
         NotificationGroupModel updated = groupRepository.save(model);
 
-        long usersCount = 0L;     // TODO
-        long alertsLast24h = 0L;  // TODO
+        long usersCount = resolveUsersCount(updated.getId());
+        long alertsLast24h = resolveAlertsLast24h(updated.getId());
 
         return groupMapper.toDetailDto(updated, usersCount, alertsLast24h);
     }

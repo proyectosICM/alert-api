@@ -60,7 +60,7 @@ public class UserModel {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
-            name = "group_id",
+            name = "notification_group_id",
             nullable = false,
             foreignKey = @ForeignKey(name = "fk_user_notification_group")
     )
