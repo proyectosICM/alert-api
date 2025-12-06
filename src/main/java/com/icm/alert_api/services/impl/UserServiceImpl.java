@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
         UserModel user = groupUserMapper.toEntity(request);
-        user.setGroup(group); // muy importante para la FK
+        user.setNotificationGroup(group); // muy importante para la FK
 
         UserModel saved = userRepository.save(user);
         return groupUserMapper.toDetailDto(saved);
