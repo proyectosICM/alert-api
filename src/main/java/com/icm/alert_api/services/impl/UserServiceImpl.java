@@ -13,6 +13,7 @@ import com.icm.alert_api.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final NotificationGroupRepository groupRepository;
     private final UserMapper groupUserMapper;
+    private final PasswordEncoder passwordEncoder;
 
     // ============== CRUD ==============
 
@@ -35,7 +37,11 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Notification group not found: " + groupId));
 
         UserModel user = groupUserMapper.toEntity(request);
-        user.setNotificationGroup(group); // muy importante para la FK
+        user.setNotificationGroup(group);
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         UserModel saved = userRepository.save(user);
         return groupUserMapper.toDetailDto(saved);
@@ -50,6 +56,10 @@ public class UserServiceImpl implements UserService {
 
         // PATCH con MapStruct (ignora nulls)
         groupUserMapper.updateEntityFromDto(request, user);
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         UserModel updated = userRepository.save(user);
         return groupUserMapper.toDetailDto(updated);

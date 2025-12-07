@@ -12,7 +12,9 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserModel, Long> {
-
+    Optional<UserModel> findByUsername(String username);
+    //Optional<UserModel> findByEmail(String email);
+    Optional<UserModel> findByDni(String email);
     // Buscar un usuario asegurando que pertenece a un grupo concreto
     Optional<UserModel> findByIdAndNotificationGroup_Id(Long id, Long groupId);
 
