@@ -10,6 +10,7 @@ import com.icm.alert_api.models.NotificationGroupModel;
 import com.icm.alert_api.repositories.AlertRepository;
 import com.icm.alert_api.repositories.NotificationGroupRepository;
 import com.icm.alert_api.services.AlertService;
+import com.icm.alert_api.services.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ public class AlertServiceImpl implements AlertService {
 
     private final AlertRepository alertRepository;
     private final NotificationGroupRepository groupRepository;
+    private final PushNotificationService pushNotificationService;
     private final AlertMapper alertMapper;
 
     // ============== CRUD ==============ac
@@ -35,6 +37,7 @@ public class AlertServiceImpl implements AlertService {
     public AlertDetailDto create(CreateAlertRequest request) {
         AlertModel model = alertMapper.toEntity(request);
         AlertModel saved = alertRepository.save(model);
+        pushNotificationService.sendNewAlert(saved);
         return alertMapper.toDetailDto(saved);
     }
 
