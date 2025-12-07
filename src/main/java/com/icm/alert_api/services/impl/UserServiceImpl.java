@@ -70,6 +70,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<GroupUserDetailDto> findById(Long userId) {
+        return userRepository.findById(userId)
+                .map(groupUserMapper::toDetailDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<GroupUserDetailDto> findById(Long groupId, Long userId) {
         return userRepository.findByIdAndNotificationGroup_Id(userId, groupId)
                 .map(groupUserMapper::toDetailDto);

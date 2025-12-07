@@ -57,10 +57,19 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<GroupUserDetailDto> getUser(
-            @RequestParam("groupId") Long groupId,
-            @PathVariable Long userId
+            @PathVariable Long userId,
+            @RequestParam(value = "groupId", required = false) Long groupId
     ) {
-        Optional<GroupUserDetailDto> opt = userService.findById(groupId, userId);
+        Optional<GroupUserDetailDto> opt;
+
+        if (groupId != null) {
+            // Búsqueda restringida al grupo
+            opt = userService.findById(groupId, userId);
+        } else {
+            // Búsqueda solo por id
+            opt = userService.findById(userId);
+        }
+
         return opt.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

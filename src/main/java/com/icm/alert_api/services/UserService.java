@@ -19,6 +19,8 @@ public interface UserService {
 
     void deleteById(Long groupId, Long userId);
 
+    Optional<GroupUserDetailDto> findById(Long userId);
+
     Optional<GroupUserDetailDto> findById(Long groupId, Long userId);
 
     // ============== Listado / búsqueda ==============
