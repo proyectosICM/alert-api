@@ -44,7 +44,7 @@ public class WebSecurityConfig {
                 "http://telemetriaperu.com:3010",
                 "http://localhost:3000",
                 "http://192.168.1.232:3000",
-                "http://samloto.com:3004"
+                "https://samloto.com:3012",
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
