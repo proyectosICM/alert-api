@@ -89,6 +89,8 @@ public class WebSecurityConfig {
                     auth.requestMatchers("/login").permitAll();
                     auth.requestMatchers("/auth/login-dni").permitAll();
                     auth.requestMatchers("/api/users/**").permitAll();
+                    auth.requestMatchers("/api/alerts/**").permitAll();
+                    auth.requestMatchers("/api/notification-groups/**").permitAll();
 
                     auth.requestMatchers("/swagger-ui/**").permitAll();
                     auth.requestMatchers("/doc/**").permitAll();
