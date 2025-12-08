@@ -74,6 +74,15 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/by-username")
+    public ResponseEntity<GroupUserDetailDto> getByUsername(
+            @RequestParam("username") String username
+    ) {
+        return userService.findByUsername(username)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     // ============== UPDATE (PATCH) ==============
 
     @PatchMapping("/{userId}")

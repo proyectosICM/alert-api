@@ -23,6 +23,8 @@ public interface UserService {
 
     Optional<GroupUserDetailDto> findById(Long groupId, Long userId);
 
+    Optional<GroupUserDetailDto> findByUsername(String username);
+
     // ============== Listado / búsqueda ==============
 
     Page<GroupUserSummaryDto> search(Long groupId, String q, Pageable pageable);

@@ -92,6 +92,13 @@ public class UserServiceImpl implements UserService {
                 .map(groupUserMapper::toDetailDto);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<GroupUserDetailDto> findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .map(groupUserMapper::toDetailDto);
+    }
+
     // ============== Listado / búsqueda ==============
 
     @Override
