@@ -2,7 +2,11 @@ package com.icm.alert_api.services.impl;
 
 import com.icm.alert_api.models.AlertModel;
 import com.icm.alert_api.models.DeviceRegistrationModel;
+import com.icm.alert_api.models.NotificationGroupModel;
+import com.icm.alert_api.models.UserModel;
 import com.icm.alert_api.repositories.DeviceRegistrationRepository;
+import com.icm.alert_api.repositories.NotificationGroupRepository;
+import com.icm.alert_api.repositories.UserRepository;
 import com.icm.alert_api.services.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +24,9 @@ import java.util.*;
 public class PushNotificationServiceImpl implements PushNotificationService {
 
     private final DeviceRegistrationRepository deviceRepo;
+    private final NotificationGroupRepository groupRepository;
+    private final UserRepository userRepository;
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -26,17 +34,50 @@ public class PushNotificationServiceImpl implements PushNotificationService {
 
     @Override
     public void sendNewAlert(AlertModel alert) {
-        // 🔹 Aquí decides a quién notificar:
-        //   por ejemplo, todos los dispositivos del grupo 1, o todos los del sistema
-        Long userId = 1L; // TODO: relacionar alert con grupo/usuarios
-        List<DeviceRegistrationModel> devices =
-                deviceRepo.findByUserIdAndActiveTrue(userId);
+        String vehicleCode = alert.getVehicleCode();
 
-        if (devices.isEmpty()) {
-            log.info("No hay dispositivos registrados para userId={}", userId);
+        if (vehicleCode == null || vehicleCode.isBlank()) {
+            log.warn("Alerta {} sin vehicleCode; no se puede resolver grupos/usuarios para push.", alert.getId());
             return;
         }
 
+        // 1) Buscar todos los grupos que tienen asignado ese montacargas
+        List<NotificationGroupModel> groups =
+                groupRepository.findByVehicleCodeAssigned(vehicleCode);
+
+        if (groups.isEmpty()) {
+            log.info("No hay grupos con el montacargas {}. No se envían notificaciones.", vehicleCode);
+            return;
+        }
+
+        // 2) Obtener IDs de grupo
+        Set<Long> groupIds = groups.stream()
+                .map(NotificationGroupModel::getId)
+                .collect(Collectors.toSet());
+
+        // 3) Usuarios que pertenecen a cualquiera de esos grupos
+        List<UserModel> users = userRepository.findByNotificationGroup_IdIn(groupIds);
+
+        if (users.isEmpty()) {
+            log.info("No hay usuarios en grupos {} para vehicleCode={}", groupIds, vehicleCode);
+            return;
+        }
+
+        // 4) IDs de usuario (sin duplicados)
+        Set<Long> userIds = users.stream()
+                .map(UserModel::getId)
+                .collect(Collectors.toSet());
+
+        // 5) Dispositivos activos de esos usuarios
+        List<DeviceRegistrationModel> devices =
+                deviceRepo.findByUserIdInAndActiveTrue(userIds);
+
+        if (devices.isEmpty()) {
+            log.info("No hay dispositivos activos para usuarios {} (vehicleCode={})", userIds, vehicleCode);
+            return;
+        }
+
+        // 6) Construir mensajes para Expo
         List<Map<String, Object>> messages = new ArrayList<>();
 
         for (DeviceRegistrationModel dev : devices) {
@@ -44,10 +85,14 @@ public class PushNotificationServiceImpl implements PushNotificationService {
             msg.put("to", dev.getExpoPushToken());
             msg.put("sound", "default");
             msg.put("title", "Alerta " + alert.getAlertType());
-            msg.put("body", alert.getShortDescription());
+            msg.put("body",
+                    Optional.ofNullable(alert.getShortDescription())
+                            .filter(s -> !s.isBlank())
+                            .orElse("Nueva alerta del montacargas " + vehicleCode)
+            );
             msg.put("data", Map.of(
                     "alertId", alert.getId(),
-                    "vehicleCode", alert.getVehicleCode()
+                    "vehicleCode", vehicleCode
             ));
             messages.add(msg);
         }
