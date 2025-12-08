@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -38,4 +40,6 @@ public interface UserRepository extends JpaRepository<UserModel, Long> {
 
     // Para KPIs de grupos si luego lo quieres usar
     long countByNotificationGroup_Id(Long groupId);
+
+    List<UserModel> findByNotificationGroup_IdIn(Collection<Long> groupIds);
 }
