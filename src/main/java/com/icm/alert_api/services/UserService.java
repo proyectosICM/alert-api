@@ -19,8 +19,7 @@ public interface UserService {
 
     void deleteById(Long companyId, Long userId);
 
-    Optional<GroupUserDetailDto> findById(Long companyId, Long userId);
-
+    // 🔹 Búsqueda por id SOLO depende del userId
     Optional<GroupUserDetailDto> findById(Long userId);
 
     Optional<GroupUserDetailDto> findByUsername(String username);

@@ -33,8 +33,6 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    // ============== CREATE (solo usuario) ==============
-
     @Override
     public GroupUserDetailDto create(CreateUserRequest request) {
         Long companyId = request.getCompanyId();
@@ -53,8 +51,6 @@ public class UserServiceImpl implements UserService {
         UserModel saved = userRepository.save(user);
         return userMapper.toDetailDto(saved);
     }
-
-    // ============== UPDATE ==============
 
     @Override
     public GroupUserDetailDto update(Long companyId, Long userId, UpdateGroupUserRequest request) {
@@ -83,13 +79,7 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<GroupUserDetailDto> findById(Long companyId, Long userId) {
-        return userRepository.findByIdAndCompanyId(userId, companyId)
-                .map(userMapper::toDetailDto);
-    }
-
+    // 🔹 Búsqueda por id SOLO por userId
     @Override
     @Transactional(readOnly = true)
     public Optional<GroupUserDetailDto> findById(Long userId) {

@@ -23,28 +23,14 @@ public class UserController {
 
     private final UserService userService;
 
-    // ============== CREATE ==============
-
-    /**
-     * Crea un usuario dentro de una empresa.
-     *
-     * POST /api/users
-     * Body: { fullName, username, dni, password, role, companyId }
-     */
     @PostMapping
     public ResponseEntity<GroupUserDetailDto> createUser(
             @Valid @RequestBody CreateUserRequest request
     ) {
         GroupUserDetailDto created = userService.create(request);
-
         URI location = URI.create("/api/users/" + created.getId());
-
-        return ResponseEntity
-                .created(location)
-                .body(created);
+        return ResponseEntity.created(location).body(created);
     }
-
-    // ============== LISTAR / BUSCAR ==============
 
     @GetMapping
     public Page<GroupUserSummaryDto> searchUsers(
@@ -55,12 +41,12 @@ public class UserController {
         return userService.search(companyId, q, pageable);
     }
 
+    // 🔹 AHORA solo depende de userId
     @GetMapping("/{userId}")
     public ResponseEntity<GroupUserDetailDto> getUser(
-            @PathVariable Long userId,
-            @RequestParam("companyId") Long companyId
+            @PathVariable Long userId
     ) {
-        Optional<GroupUserDetailDto> opt = userService.findById(companyId, userId);
+        Optional<GroupUserDetailDto> opt = userService.findById(userId);
 
         return opt.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
