@@ -37,4 +37,6 @@ public interface AlertService {
     long countLast24hForGroup(Long companyId, Long groupId);
 
     AlertDetailDto acknowledge(Long companyId, Long alertId);
+
+    Page<AlertSummaryDto> listByUser(Long companyId, Long userId, Pageable pageable);
 }

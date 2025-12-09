@@ -8,9 +8,8 @@ import com.icm.alert_api.mappers.AlertMapper;
 import com.icm.alert_api.models.AlertModel;
 import com.icm.alert_api.models.CompanyModel;
 import com.icm.alert_api.models.NotificationGroupModel;
-import com.icm.alert_api.repositories.AlertRepository;
-import com.icm.alert_api.repositories.CompanyRepository;
-import com.icm.alert_api.repositories.NotificationGroupRepository;
+import com.icm.alert_api.models.UserModel;
+import com.icm.alert_api.repositories.*;
 import com.icm.alert_api.services.AlertService;
 import com.icm.alert_api.services.PushNotificationService;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +32,9 @@ public class AlertServiceImpl implements AlertService {
     private final CompanyRepository companyRepository;
     private final PushNotificationService pushNotificationService;
     private final AlertMapper alertMapper;
+
+    private final GroupUserRepository groupUserRepository;
+    private final UserRepository userRepository;
 
     // ============== CRUD ==============
 
@@ -181,5 +183,45 @@ public class AlertServiceImpl implements AlertService {
         }
 
         return alertMapper.toDetailDto(model);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AlertSummaryDto> listByUser(Long companyId, Long userId, Pageable pageable) {
+        // 1) Validar que el usuario existe
+        UserModel user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        // 2) Validar que pertenece a la empresa
+        if (!user.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException(
+                    "User does not belong to company: " + companyId
+            );
+        }
+
+        // 3) Obtener grupos activos del usuario
+        var memberships = groupUserRepository.findByUser_IdAndActiveTrue(userId);
+        if (memberships.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // 4) Unir todos los vehicleCodes de los grupos
+        Set<String> vehicleCodes = memberships.stream()
+                .map(m -> m.getGroup())
+                .filter(g -> g.getVehicleCodes() != null)
+                .flatMap(g -> g.getVehicleCodes().stream())
+                .collect(java.util.stream.Collectors.toSet());
+
+        if (vehicleCodes.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // 5) Buscar alertas por company + vehicleCodes, ordenadas por fecha desc
+        Page<AlertModel> page = alertRepository
+                .findByCompanyIdAndVehicleCodeInOrderByEventTimeDesc(
+                        companyId, vehicleCodes, pageable
+                );
+
+        return page.map(alertMapper::toSummaryDto);
     }
 }

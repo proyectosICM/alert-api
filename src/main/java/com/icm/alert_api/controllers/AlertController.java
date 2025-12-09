@@ -157,4 +157,17 @@ public class AlertController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         }
     }
+
+    @GetMapping("/user/{userId}")
+    public Page<AlertSummaryDto> listByUser(
+            @RequestParam("companyId") Long companyId,
+            @PathVariable("userId") Long userId,
+            Pageable pageable
+    ) {
+        try {
+            return alertService.listByUser(companyId, userId, pageable);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
 }
