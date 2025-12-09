@@ -1,6 +1,7 @@
 package com.icm.alert_api.security;
 
 import com.icm.alert_api.config.WebConfig;
+import com.icm.alert_api.repositories.UserRepository;
 import com.icm.alert_api.security.filtrers.JwtAuthenticationFilter;
 import com.icm.alert_api.security.filtrers.JwtAuthorizationFilter;
 import com.icm.alert_api.security.jwt.JwtUtils;
@@ -36,6 +37,7 @@ public class WebSecurityConfig {
     private final JwtUtils jwtUtils;
     private final SecurityUserDetailsServiceImpl securityUserDetailsService;
     private final JwtAuthorizationFilter authorizationFilter;
+    private final UserRepository userRepository;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -60,7 +62,7 @@ public class WebSecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity,
                                             AuthenticationManager authenticationManager) throws Exception {
 
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtUtils);
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtUtils, userRepository);
         jwtAuthenticationFilter.setAuthenticationManager(authenticationManager);
         jwtAuthenticationFilter.setFilterProcessesUrl("/login");
 
@@ -88,9 +90,10 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/login").permitAll();
                     auth.requestMatchers("/auth/login-dni").permitAll();
+                    auth.requestMatchers("/api/companies/**").permitAll();
                     auth.requestMatchers("/api/users/**").permitAll();
                     auth.requestMatchers("/api/alerts/**").permitAll();
-                    auth.requestMatchers("/api/notification-groups/**").permitAll();
+                    auth.requestMatchers("/api/alerts/**").permitAll();
 
                     auth.requestMatchers("/swagger-ui/**").permitAll();
                     auth.requestMatchers("/doc/**").permitAll();

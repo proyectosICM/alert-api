@@ -33,9 +33,6 @@ public class AuthController {
                         new RuntimeException("DNI no encontrado o usuario inactivo")
                 );
 
-        // ⚠️ A nivel de seguridad real, aquí deberías poner alguna validación extra:
-        // PIN, código temporal, restricciones de rol, etc.
-
         String token = jwtUtils.generateAccesToken(user.getUsername());
 
         Map<String, Object> httpResponse = new HashMap<>();
@@ -44,6 +41,12 @@ public class AuthController {
         httpResponse.put("username", user.getUsername());
         httpResponse.put("dni", user.getDni());
         httpResponse.put("role", user.getRole().name());
+
+        if (user.getCompany() != null) {
+            httpResponse.put("companyId", user.getCompany().getId());
+        } else {
+            httpResponse.put("companyId", null);
+        }
 
         return ResponseEntity.ok(httpResponse);
     }
