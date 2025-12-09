@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface AlertService {
 
     // CRUD
-    AlertDetailDto create(Long companyId, CreateAlertRequest request);
+    AlertDetailDto create(CreateAlertRequest request);
 
     AlertDetailDto update(Long companyId, Long alertId, UpdateAlertRequest request);
 

@@ -39,20 +39,47 @@ public class AlertServiceImpl implements AlertService {
     // ============== CRUD ==============
 
     @Override
-    public AlertDetailDto create(Long companyId, CreateAlertRequest request) {
-        CompanyModel company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
+    public AlertDetailDto create(CreateAlertRequest request) {
+        String vehicleCode = request.getVehicleCode();
+        if (vehicleCode == null || vehicleCode.isBlank()) {
+            throw new IllegalArgumentException("vehicleCode is required to create an alert");
+        }
 
+        // 1) Buscar grupos que tengan ese vehicleCode
+        var groups = groupRepository.findByVehicleCode(vehicleCode);
+
+        if (groups.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No se encontró ningún grupo con el vehicleCode: " + vehicleCode
+            );
+        }
+
+        // Opcional: si hay más de un grupo, verificar que todas las empresas sean la misma
+        CompanyModel company = groups.get(0).getCompany();
+        boolean multipleCompanies = groups.stream()
+                .map(g -> g.getCompany().getId())
+                .distinct()
+                .count() > 1;
+
+        if (multipleCompanies) {
+            throw new IllegalArgumentException(
+                    "El vehicleCode " + vehicleCode + " está asociado a múltiples compañías; " +
+                            "no se puede determinar companyId de forma unívoca."
+            );
+        }
+
+        // 2) Mapear la alerta y setear la empresa resuelta
         AlertModel model = alertMapper.toEntity(request);
         model.setCompany(company);
 
         AlertModel saved = alertRepository.save(model);
 
-        // Notificar por push a los usuarios de los grupos correspondientes
+        // 3) Notificar por push a los usuarios de los grupos correspondientes
         pushNotificationService.sendNewAlert(saved);
 
         return alertMapper.toDetailDto(saved);
     }
+
 
     @Override
     public AlertDetailDto update(Long companyId, Long alertId, UpdateAlertRequest request) {
@@ -224,4 +251,5 @@ public class AlertServiceImpl implements AlertService {
 
         return page.map(alertMapper::toSummaryDto);
     }
+
 }

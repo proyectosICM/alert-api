@@ -31,15 +31,20 @@ public class AlertController {
      * Crea una nueva alerta.
      * Pensado para ser llamado por el script que procesa los correos.
      *
-     * POST /api/alerts?companyId=...
+     * POST /api/alerts
+     * La compañía se resuelve internamente a partir del vehicleCode
+     * buscando los grupos que lo contengan.
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public AlertDetailDto create(
-            @RequestParam("companyId") Long companyId,
             @Valid @RequestBody CreateAlertRequest request
     ) {
-        return alertService.create(companyId, request);
+        try {
+            return alertService.create(request);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
     }
 
     // ============== READ ONE ==============

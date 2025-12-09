@@ -52,4 +52,12 @@ public interface NotificationGroupRepository extends JpaRepository<NotificationG
     );
 
     long countByCompany_Id(Long companyId);
+
+    @Query("""
+        select g
+        from NotificationGroupModel g
+        join g.vehicleCodes v
+        where v = :vehicleCode
+    """)
+    java.util.List<NotificationGroupModel> findByVehicleCode(String vehicleCode);
 }
