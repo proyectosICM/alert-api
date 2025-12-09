@@ -10,21 +10,19 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    // ======= Create DTO -> Entity =======
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "company", ignore = true)            // 👈 se setea en el servicio
+    @Mapping(target = "company", ignore = true)
     @Mapping(target = "memberships", ignore = true)
     @Mapping(target = "devices", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "active", constant = "true")          // por defecto activo
+    @Mapping(target = "active", constant = "true")
     UserModel toEntity(CreateUserRequest request);
 
-    // ======= Update DTO -> Entity (patch) =======
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "company", ignore = true)            // 👈 no cambiar empresa aquí
+    @Mapping(target = "company", ignore = true)
     @Mapping(target = "memberships", ignore = true)
     @Mapping(target = "devices", ignore = true)
     @Mapping(target = "version", ignore = true)
@@ -32,7 +30,7 @@ public interface UserMapper {
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromDto(UpdateGroupUserRequest request, @MappingTarget UserModel entity);
 
-    // ======= Entity -> Detail DTO =======
+    // Detail
     @Mapping(
             target = "createdAt",
             expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
@@ -51,10 +49,18 @@ public interface UserMapper {
     )
     GroupUserDetailDto toDetailDto(UserModel model);
 
-    // ======= Entity -> Summary DTO =======
+    // Summary
     @Mapping(
             target = "createdAt",
             expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
+    )
+    @Mapping(
+            target = "companyId",
+            expression = "java(model.getCompany() != null ? model.getCompany().getId() : null)"
+    )
+    @Mapping(
+            target = "companyName",
+            expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
     )
     GroupUserSummaryDto toSummaryDto(UserModel model);
 }
