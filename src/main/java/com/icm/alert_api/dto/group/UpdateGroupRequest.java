@@ -1,5 +1,6 @@
 package com.icm.alert_api.dto.group;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -7,6 +8,9 @@ import java.util.Set;
 
 @Data
 public class UpdateGroupRequest {
+
+    @NotNull
+    private Long companyId;
 
     @Size(max = 120)
     private String name;

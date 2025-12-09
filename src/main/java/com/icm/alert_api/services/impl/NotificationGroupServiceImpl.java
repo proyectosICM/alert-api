@@ -54,7 +54,12 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
     // ============== CRUD ==============
 
     @Override
-    public GroupDetailDto create(Long companyId, CreateGroupRequest request) {
+    public GroupDetailDto create(CreateGroupRequest request) {
+        Long companyId = request.getCompanyId();
+        if (companyId == null) {
+            throw new IllegalArgumentException("companyId is required in CreateGroupRequest");
+        }
+
         CompanyModel company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
 
@@ -63,14 +68,19 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
 
         NotificationGroupModel saved = groupRepository.save(model);
 
-        long usersCount = 0L;
+        long usersCount = 0L; // recién creado, aún sin usuarios asociados
         long alertsLast24h = resolveAlertsLast24h(saved);
 
         return groupMapper.toDetailDto(saved, usersCount, alertsLast24h);
     }
 
     @Override
-    public GroupDetailDto update(Long companyId, Long groupId, UpdateGroupRequest request) {
+    public GroupDetailDto update(Long groupId, UpdateGroupRequest request) {
+        Long companyId = request.getCompanyId();
+        if (companyId == null) {
+            throw new IllegalArgumentException("companyId is required in UpdateGroupRequest");
+        }
+
         NotificationGroupModel model = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 

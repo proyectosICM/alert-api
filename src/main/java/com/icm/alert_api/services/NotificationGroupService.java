@@ -11,13 +11,18 @@ import java.util.Optional;
 
 public interface NotificationGroupService {
 
-    GroupDetailDto create(Long companyId, CreateGroupRequest request);
+    // companyId viene dentro de CreateGroupRequest
+    GroupDetailDto create(CreateGroupRequest request);
 
-    GroupDetailDto update(Long companyId, Long groupId, UpdateGroupRequest request);
+    // companyId viene dentro de UpdateGroupRequest
+    GroupDetailDto update(Long groupId, UpdateGroupRequest request);
 
+    // Para DELETE seguimos usando companyId por query param
     void deleteById(Long companyId, Long groupId);
 
+    // Para READ ONE también companyId por query param
     Optional<GroupDetailDto> findById(Long companyId, Long groupId);
 
+    // Para SEARCH igualmente companyId por query param
     Page<GroupSummaryDto> search(Long companyId, String q, Pageable pageable);
 }

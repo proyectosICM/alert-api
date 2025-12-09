@@ -10,9 +10,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+
+import java.net.URI;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/notification-groups")
@@ -22,36 +25,37 @@ public class NotificationGroupController {
 
     private final NotificationGroupService groupService;
 
-    // ============== CREATE ==============
+    // ============== CREATE (companyId viene en el DTO) ==============
 
     /**
-     * POST /api/notification-groups?companyId=...
+     * POST /api/notification-groups
+     * companyId viene en CreateGroupRequest.companyId
      */
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public GroupDetailDto create(
-            @RequestParam("companyId") Long companyId,
+    public ResponseEntity<GroupDetailDto> create(
             @Valid @RequestBody CreateGroupRequest request
     ) {
-        return groupService.create(companyId, request);
+        GroupDetailDto created = groupService.create(request);
+        URI location = URI.create("/api/notification-groups/" + created.getId());
+        return ResponseEntity.created(location).body(created);
     }
 
-    // ============== READ ONE ==============
+    // ============== READ ONE (usa companyId por query param) ==============
 
     /**
      * GET /api/notification-groups/{id}?companyId=...
      */
     @GetMapping("/{id}")
-    public GroupDetailDto findById(
+    public ResponseEntity<GroupDetailDto> getById(
             @RequestParam("companyId") Long companyId,
             @PathVariable("id") Long id
     ) {
-        return groupService.findById(companyId, id)
-                .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Group not found: " + id));
+        Optional<GroupDetailDto> opt = groupService.findById(companyId, id);
+        return opt.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ============== LIST / SEARCH ==============
+    // ============== LIST / SEARCH (companyId por query param) ==============
 
     /**
      * GET /api/notification-groups?companyId=...&q=texto&page=0&size=20
@@ -65,25 +69,22 @@ public class NotificationGroupController {
         return groupService.search(companyId, q, pageable);
     }
 
-    // ============== UPDATE ==============
+    // ============== UPDATE (companyId viene en el DTO) ==============
 
     /**
-     * PATCH /api/notification-groups/{id}?companyId=...
+     * PATCH /api/notification-groups/{id}
+     * companyId viene en UpdateGroupRequest.companyId
      */
     @PatchMapping("/{id}")
-    public GroupDetailDto update(
-            @RequestParam("companyId") Long companyId,
+    public ResponseEntity<GroupDetailDto> update(
             @PathVariable("id") Long id,
             @Valid @RequestBody UpdateGroupRequest request
     ) {
-        try {
-            return groupService.update(companyId, id, request);
-        } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
-        }
+        GroupDetailDto updated = groupService.update(id, request);
+        return ResponseEntity.ok(updated);
     }
 
-    // ============== DELETE ==============
+    // ============== DELETE (companyId por query param) ==============
 
     /**
      * DELETE /api/notification-groups/{id}?companyId=...
@@ -94,10 +95,6 @@ public class NotificationGroupController {
             @RequestParam("companyId") Long companyId,
             @PathVariable("id") Long id
     ) {
-        try {
-            groupService.deleteById(companyId, id);
-        } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
-        }
+        groupService.deleteById(companyId, id);
     }
 }

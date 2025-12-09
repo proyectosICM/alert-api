@@ -13,7 +13,7 @@ public interface NotificationGroupMapper {
     // ======= Create DTO -> Entity =======
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "company", ignore = true)
+    @Mapping(target = "company", ignore = true)     // company se setea en el service
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -37,7 +37,7 @@ public interface NotificationGroupMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "company", ignore = true)
+    @Mapping(target = "company", ignore = true)     // no cambiamos la company desde el DTO
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -59,7 +59,6 @@ public interface NotificationGroupMapper {
     }
 
     // ======= Entity -> Detail DTO =======
-    // Detail incluye lista completa de vehicleCodes
 
     @Mapping(target = "usersCount", expression = "java(usersCount)")
     @Mapping(target = "alertsLast24h", expression = "java(alertsLast24h)")
@@ -81,7 +80,6 @@ public interface NotificationGroupMapper {
                                long alertsLast24h);
 
     // ======= Entity -> Summary DTO =======
-    // Summary ahora lleva contador + lista de vehicleCodes
 
     @Mapping(target = "usersCount", expression = "java(usersCount)")
     @Mapping(target = "alertsLast24h", expression = "java(alertsLast24h)")
@@ -95,7 +93,6 @@ public interface NotificationGroupMapper {
             expression =
                     "java(model.getVehicleCodes() != null ? model.getVehicleCodes().size() : 0L)"
     )
-    // 👇 ESTA ES LA PARTE NUEVA IMPORTANTE
     @Mapping(
             target = "vehicleCodes",
             expression =
