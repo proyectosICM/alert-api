@@ -30,4 +30,7 @@ public class CreateUserRequest {
      */
     @NotNull
     private Role role;
+
+    @NotNull
+    private Long companyId;
 }

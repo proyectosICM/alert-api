@@ -5,9 +5,11 @@ import com.icm.alert_api.dto.user.GroupUserDetailDto;
 import com.icm.alert_api.dto.user.GroupUserSummaryDto;
 import com.icm.alert_api.dto.user.UpdateGroupUserRequest;
 import com.icm.alert_api.mappers.UserMapper;
+import com.icm.alert_api.models.CompanyModel;
 import com.icm.alert_api.models.GroupUserModel;
 import com.icm.alert_api.models.NotificationGroupModel;
 import com.icm.alert_api.models.UserModel;
+import com.icm.alert_api.repositories.CompanyRepository;
 import com.icm.alert_api.repositories.GroupUserRepository;
 import com.icm.alert_api.repositories.NotificationGroupRepository;
 import com.icm.alert_api.repositories.UserRepository;
@@ -27,50 +29,40 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final NotificationGroupRepository groupRepository;
-    private final GroupUserRepository groupUserRepository;
+    private final CompanyRepository companyRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    // ============== CRUD ==============
+    // ============== CREATE (solo usuario) ==============
 
     @Override
-    public GroupUserDetailDto create(Long groupId, CreateUserRequest request) {
-        NotificationGroupModel group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new IllegalArgumentException("Notification group not found: " + groupId));
+    public GroupUserDetailDto create(CreateUserRequest request) {
+        Long companyId = request.getCompanyId();
 
-        // Crear usuario en la empresa del grupo
+        CompanyModel company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
+
         UserModel user = userMapper.toEntity(request);
-        user.setCompany(group.getCompany());
+        user.setCompany(company);
+        user.setActive(true);
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        UserModel savedUser = userRepository.save(user);
-
-        // Crear membresía grupo-usuario
-        GroupUserModel membership = GroupUserModel.builder()
-                .group(group)
-                .user(savedUser)
-                .active(true)
-                .build();
-
-        groupUserRepository.save(membership);
-
-        return userMapper.toDetailDto(savedUser);
+        UserModel saved = userRepository.save(user);
+        return userMapper.toDetailDto(saved);
     }
 
+    // ============== UPDATE ==============
+
     @Override
-    public GroupUserDetailDto update(Long groupId, Long userId, UpdateGroupUserRequest request) {
-        GroupUserModel membership = groupUserRepository.findByGroup_IdAndUser_Id(groupId, userId)
+    public GroupUserDetailDto update(Long companyId, Long userId, UpdateGroupUserRequest request) {
+        UserModel user = userRepository.findByIdAndCompanyId(userId, companyId)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "User not found in notification group. userId=" + userId + ", groupId=" + groupId
+                        "User not found in company. userId=" + userId + ", companyId=" + companyId
                 ));
 
-        UserModel user = membership.getUser();
-
-        // PATCH con MapStruct
         userMapper.updateEntityFromDto(request, user);
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
@@ -82,19 +74,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteById(Long groupId, Long userId) {
-        GroupUserModel membership = groupUserRepository.findByGroup_IdAndUser_Id(groupId, userId)
+    public void deleteById(Long companyId, Long userId) {
+        UserModel user = userRepository.findByIdAndCompanyId(userId, companyId)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "User not found in notification group. userId=" + userId + ", groupId=" + groupId
+                        "User not found in company. userId=" + userId + ", companyId=" + companyId
                 ));
 
-        groupUserRepository.delete(membership);
-
-        // Si quisieras borrar el usuario cuando ya no tiene más grupos:
-        // if (user.getMemberships().isEmpty()) { userRepository.delete(user); }
+        userRepository.delete(user);
     }
 
-    // ============== Queries ==============
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<GroupUserDetailDto> findById(Long companyId, Long userId) {
+        return userRepository.findByIdAndCompanyId(userId, companyId)
+                .map(userMapper::toDetailDto);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -105,34 +99,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<GroupUserDetailDto> findById(Long groupId, Long userId) {
-        return groupUserRepository.findByGroup_IdAndUser_Id(groupId, userId)
-                .map(GroupUserModel::getUser)
-                .map(userMapper::toDetailDto);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<GroupUserDetailDto> findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .map(userMapper::toDetailDto);
     }
 
-    // ============== Listado / búsqueda miembros de un grupo ==============
-
     @Override
     @Transactional(readOnly = true)
-    public Page<GroupUserSummaryDto> search(Long groupId, String q, Pageable pageable) {
-        Page<GroupUserModel> page;
+    public Page<GroupUserSummaryDto> search(Long companyId, String q, Pageable pageable) {
+        Page<UserModel> page;
 
         if (q == null || q.isBlank()) {
-            page = groupUserRepository.findByGroup_Id(groupId, pageable);
+            page = userRepository.findByCompanyId(companyId, pageable);
         } else {
             String query = q.trim();
-            page = groupUserRepository.searchMembersInGroup(groupId, query, pageable);
+            page = userRepository.searchInCompany(companyId, query, pageable);
         }
 
-        // Mapear membership -> DTO a partir del User
-        return page.map(gu -> userMapper.toSummaryDto(gu.getUser()));
+        return page.map(userMapper::toSummaryDto);
     }
 }

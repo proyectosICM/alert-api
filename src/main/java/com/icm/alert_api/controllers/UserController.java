@@ -25,17 +25,19 @@ public class UserController {
 
     // ============== CREATE ==============
 
+    /**
+     * Crea un usuario dentro de una empresa.
+     *
+     * POST /api/users
+     * Body: { fullName, username, dni, password, role, companyId }
+     */
     @PostMapping
     public ResponseEntity<GroupUserDetailDto> createUser(
-            @RequestParam("groupId") Long groupId,
             @Valid @RequestBody CreateUserRequest request
     ) {
-        GroupUserDetailDto created = userService.create(groupId, request);
+        GroupUserDetailDto created = userService.create(request);
 
-        // Location: /api/users/{id}?groupId={groupId}
-        URI location = URI.create(
-                String.format("/api/users/%d?groupId=%d", created.getId(), groupId)
-        );
+        URI location = URI.create("/api/users/" + created.getId());
 
         return ResponseEntity
                 .created(location)
@@ -46,29 +48,19 @@ public class UserController {
 
     @GetMapping
     public Page<GroupUserSummaryDto> searchUsers(
-            @RequestParam("groupId") Long groupId,
+            @RequestParam("companyId") Long companyId,
             @RequestParam(name = "q", required = false) String q,
             Pageable pageable
     ) {
-        return userService.search(groupId, q, pageable);
+        return userService.search(companyId, q, pageable);
     }
-
-    // ============== DETALLE ==============
 
     @GetMapping("/{userId}")
     public ResponseEntity<GroupUserDetailDto> getUser(
             @PathVariable Long userId,
-            @RequestParam(value = "groupId", required = false) Long groupId
+            @RequestParam("companyId") Long companyId
     ) {
-        Optional<GroupUserDetailDto> opt;
-
-        if (groupId != null) {
-            // Búsqueda restringida al grupo
-            opt = userService.findById(groupId, userId);
-        } else {
-            // Búsqueda solo por id
-            opt = userService.findById(userId);
-        }
+        Optional<GroupUserDetailDto> opt = userService.findById(companyId, userId);
 
         return opt.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -83,26 +75,22 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ============== UPDATE (PATCH) ==============
-
     @PatchMapping("/{userId}")
     public ResponseEntity<GroupUserDetailDto> updateUser(
-            @RequestParam("groupId") Long groupId,
+            @RequestParam("companyId") Long companyId,
             @PathVariable Long userId,
             @Valid @RequestBody UpdateGroupUserRequest request
     ) {
-        GroupUserDetailDto updated = userService.update(groupId, userId, request);
+        GroupUserDetailDto updated = userService.update(companyId, userId, request);
         return ResponseEntity.ok(updated);
     }
-
-    // ============== DELETE ==============
 
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(
-            @RequestParam("groupId") Long groupId,
+            @RequestParam("companyId") Long companyId,
             @PathVariable Long userId
     ) {
-        userService.deleteById(groupId, userId);
+        userService.deleteById(companyId, userId);
     }
 }
