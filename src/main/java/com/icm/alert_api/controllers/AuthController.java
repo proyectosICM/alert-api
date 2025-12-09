@@ -41,6 +41,7 @@ public class AuthController {
         httpResponse.put("username", user.getUsername());
         httpResponse.put("dni", user.getDni());
         httpResponse.put("role", user.getRole().name());
+        httpResponse.put("userId", user.getId());
 
         if (user.getCompany() != null) {
             httpResponse.put("companyId", user.getCompany().getId());

@@ -68,16 +68,21 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         UserModel userModel = userRepository.findByUsername(username).orElse(null);
         Long companyId = null;
-        if (userModel != null && userModel.getCompany() != null) {
-            companyId = userModel.getCompany().getId();
-        }
+        Long userId = null;
 
+        if (userModel != null) {
+            userId = userModel.getId();
+            if (userModel.getCompany() != null) {
+                companyId = userModel.getCompany().getId();
+            }
+        }
         response.addHeader("Authorization", token);
 
         Map<String, Object> httpResponse = new HashMap<>();
         httpResponse.put("token", token);
         httpResponse.put("Message", "Autenticacion Correcta");
         httpResponse.put("Username", user.getUsername());
+        httpResponse.put("userId", userId);
 
         String roles = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
