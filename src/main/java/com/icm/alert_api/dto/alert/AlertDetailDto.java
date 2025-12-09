@@ -11,6 +11,9 @@ public class AlertDetailDto {
 
     Long id;
 
+    Long companyId;
+    String companyName;
+
     String vehicleCode;
     String licensePlate;
 

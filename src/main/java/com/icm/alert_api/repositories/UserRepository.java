@@ -8,38 +8,39 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserModel, Long> {
+
     Optional<UserModel> findByUsername(String username);
     //Optional<UserModel> findByEmail(String email);
     Optional<UserModel> findByDni(String dni);
-    // Buscar un usuario asegurando que pertenece a un grupo concreto
-    Optional<UserModel> findByIdAndNotificationGroup_Id(Long id, Long groupId);
 
-    // Listar usuarios de un grupo (sin filtro de texto)
-    Page<UserModel> findByNotificationGroup_Id(Long groupId, Pageable pageable);
+    Optional<UserModel> findByCompanyIdAndUsernameIgnoreCase(Long companyId, String username);
 
-    // Búsqueda por texto dentro de un grupo (fullName / username / dni)
+    Optional<UserModel> findByCompanyIdAndDni(Long companyId, String dni);
+
+    // Por seguridad, siempre verifica que pertenezca a la empresa
+    Optional<UserModel> findByIdAndCompanyId(Long id, Long companyId);
+
+    // Listar usuarios de una empresa
+    Page<UserModel> findByCompanyId(Long companyId, Pageable pageable);
+
+    // Búsqueda por texto dentro de una empresa (fullName / username / dni)
     @Query("""
            SELECT u
            FROM UserModel u
-           WHERE u.notificationGroup.id = :groupId
+           WHERE u.company.id = :companyId
              AND (
-                LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(u.username) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(u.dni)      LIKE LOWER(CONCAT('%', :q, '%'))
+                LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%'))
+             OR LOWER(u.username) LIKE LOWER(CONCAT('%', :q, '%'))
+             OR LOWER(u.dni)      LIKE LOWER(CONCAT('%', :q, '%'))
              )
            """)
-    Page<UserModel> searchInGroup(@Param("groupId") Long groupId,
-                                  @Param("q") String q,
-                                  Pageable pageable);
+    Page<UserModel> searchInCompany(@Param("companyId") Long companyId,
+                                    @Param("q") String q,
+                                    Pageable pageable);
 
-    // Para KPIs de grupos si luego lo quieres usar
-    long countByNotificationGroup_Id(Long groupId);
-
-    List<UserModel> findByNotificationGroup_IdIn(Collection<Long> groupIds);
+    long countByCompanyId(Long companyId);
 }

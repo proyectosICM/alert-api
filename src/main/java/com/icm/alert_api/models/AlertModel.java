@@ -12,16 +12,20 @@ import java.time.ZonedDateTime;
         name = "alerts",
         indexes = {
                 @Index(
-                        name = "idx_alert_vehicle_time",
-                        columnList = "vehicle_code, event_time"
+                        name = "idx_alert_company_vehicle_time",
+                        columnList = "company_id, vehicle_code, event_time"
                 ),
                 @Index(
-                        name = "idx_alert_type_time",
-                        columnList = "alert_type, event_time"
+                        name = "idx_alert_company_type_time",
+                        columnList = "company_id, alert_type, event_time"
                 ),
                 @Index(
-                        name = "idx_alert_ack_time",
-                        columnList = "acknowledged, event_time"
+                        name = "idx_alert_company_ack_time",
+                        columnList = "company_id, acknowledged, event_time"
+                ),
+                @Index(
+                        name = "idx_alert_company_event_time",
+                        columnList = "company_id, event_time"
                 )
         }
 )
@@ -145,6 +149,10 @@ public class AlertModel {
 
     @Column(nullable = false)
     private boolean acknowledged = false;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false, foreignKey = @ForeignKey(name = "fk_alert_company"))
+    private CompanyModel company;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

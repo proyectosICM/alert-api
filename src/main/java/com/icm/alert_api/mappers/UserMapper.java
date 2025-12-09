@@ -1,6 +1,6 @@
 package com.icm.alert_api.mappers;
 
-import com.icm.alert_api.dto.user.CreateGroupUserRequest;
+import com.icm.alert_api.dto.user.CreateUserRequest;
 import com.icm.alert_api.dto.user.GroupUserDetailDto;
 import com.icm.alert_api.dto.user.GroupUserSummaryDto;
 import com.icm.alert_api.dto.user.UpdateGroupUserRequest;
@@ -12,17 +12,21 @@ public interface UserMapper {
 
     // ======= Create DTO -> Entity =======
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "notificationGroup", ignore = true)   // se setea en el service
+    @Mapping(target = "company", ignore = true)            // 👈 se setea en el servicio
+    @Mapping(target = "memberships", ignore = true)
+    @Mapping(target = "devices", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "active", constant = "true")          // por defecto activo
-    UserModel toEntity(CreateGroupUserRequest request);
+    UserModel toEntity(CreateUserRequest request);
 
     // ======= Update DTO -> Entity (patch) =======
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "notificationGroup", ignore = true)   // no cambiamos el grupo vía update
+    @Mapping(target = "company", ignore = true)            // 👈 no cambiar empresa aquí
+    @Mapping(target = "memberships", ignore = true)
+    @Mapping(target = "devices", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -36,6 +40,14 @@ public interface UserMapper {
     @Mapping(
             target = "updatedAt",
             expression = "java(model.getUpdatedAt() != null ? model.getUpdatedAt().toInstant() : null)"
+    )
+    @Mapping(
+            target = "companyId",
+            expression = "java(model.getCompany() != null ? model.getCompany().getId() : null)"
+    )
+    @Mapping(
+            target = "companyName",
+            expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
     )
     GroupUserDetailDto toDetailDto(UserModel model);
 

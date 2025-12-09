@@ -10,6 +10,8 @@ import java.time.Instant;
 @Builder
 public class GroupUserSummaryDto {
     Long id;
+    Long companyId;
+    String companyName;
     String fullName;
     String username;
     String dni;

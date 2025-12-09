@@ -11,17 +11,13 @@ import java.util.Optional;
 
 public interface NotificationGroupService {
 
-    // ============== CRUD ==============
+    GroupDetailDto create(Long companyId, CreateGroupRequest request);
 
-    GroupDetailDto create(CreateGroupRequest request);
+    GroupDetailDto update(Long companyId, Long groupId, UpdateGroupRequest request);
 
-    GroupDetailDto update(Long groupId, UpdateGroupRequest request);
+    void deleteById(Long companyId, Long groupId);
 
-    void deleteById(Long groupId);
+    Optional<GroupDetailDto> findById(Long companyId, Long groupId);
 
-    Optional<GroupDetailDto> findById(Long groupId);
-
-    // ============== Listado / búsqueda ==============
-
-    Page<GroupSummaryDto> search(String q, Pageable pageable);
+    Page<GroupSummaryDto> search(Long companyId, String q, Pageable pageable);
 }

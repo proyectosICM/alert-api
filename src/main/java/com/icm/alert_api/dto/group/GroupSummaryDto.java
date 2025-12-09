@@ -11,6 +11,8 @@ import java.util.Set;
 @Builder
 public class GroupSummaryDto {
     Long id;
+    Long companyId;
+    String companyName;
     String name;
     String description;
     Instant createdAt;

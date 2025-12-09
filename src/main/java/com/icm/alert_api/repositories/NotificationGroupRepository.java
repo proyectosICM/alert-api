@@ -13,14 +13,43 @@ import java.util.List;
 @Repository
 public interface NotificationGroupRepository extends JpaRepository<NotificationGroupModel, Long> {
 
-    Page<NotificationGroupModel> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            String name, String description, Pageable pageable
-    );
+    /**
+     * Listar grupos de una empresa sin filtro.
+     */
+    Page<NotificationGroupModel> findByCompanyId(Long companyId, Pageable pageable);
 
+    /**
+     * Búsqueda por nombre/description dentro de una empresa.
+     */
     @Query("""
            SELECT g
            FROM NotificationGroupModel g
-           WHERE :vehicleCode MEMBER OF g.vehicleCodes
+           WHERE g.company.id = :companyId
+             AND (
+                 LOWER(g.name)        LIKE LOWER(CONCAT('%', :q, '%'))
+              OR LOWER(g.description) LIKE LOWER(CONCAT('%', :q, '%'))
+             )
            """)
-    List<NotificationGroupModel> findByVehicleCodeAssigned(@Param("vehicleCode") String vehicleCode);
+    Page<NotificationGroupModel> searchByCompanyAndText(
+            @Param("companyId") Long companyId,
+            @Param("q") String q,
+            Pageable pageable
+    );
+
+    /**
+     * Grupos de una empresa que tienen asignado cierto código de montacargas.
+     * Usado para saber qué grupos deben recibir las alertas de un vehículo.
+     */
+    @Query("""
+           SELECT g
+           FROM NotificationGroupModel g
+           WHERE g.company.id = :companyId
+             AND :vehicleCode MEMBER OF g.vehicleCodes
+           """)
+    List<NotificationGroupModel> findByCompanyAndVehicleCodeAssigned(
+            @Param("companyId") Long companyId,
+            @Param("vehicleCode") String vehicleCode
+    );
+
+    long countByCompany_Id(Long companyId);
 }

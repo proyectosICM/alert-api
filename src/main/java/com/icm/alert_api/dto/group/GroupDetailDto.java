@@ -10,6 +10,8 @@ import java.util.Set;
 @Builder
 public class GroupDetailDto {
     Long id;
+    Long companyId;
+    String companyName;
     String name;
     String description;
     Instant createdAt;

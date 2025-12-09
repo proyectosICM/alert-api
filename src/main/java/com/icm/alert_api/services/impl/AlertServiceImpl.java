@@ -6,8 +6,10 @@ import com.icm.alert_api.dto.alert.CreateAlertRequest;
 import com.icm.alert_api.dto.alert.UpdateAlertRequest;
 import com.icm.alert_api.mappers.AlertMapper;
 import com.icm.alert_api.models.AlertModel;
+import com.icm.alert_api.models.CompanyModel;
 import com.icm.alert_api.models.NotificationGroupModel;
 import com.icm.alert_api.repositories.AlertRepository;
+import com.icm.alert_api.repositories.CompanyRepository;
 import com.icm.alert_api.repositories.NotificationGroupRepository;
 import com.icm.alert_api.services.AlertService;
 import com.icm.alert_api.services.PushNotificationService;
@@ -28,23 +30,36 @@ public class AlertServiceImpl implements AlertService {
 
     private final AlertRepository alertRepository;
     private final NotificationGroupRepository groupRepository;
+    private final CompanyRepository companyRepository;
     private final PushNotificationService pushNotificationService;
     private final AlertMapper alertMapper;
 
-    // ============== CRUD ==============ac
+    // ============== CRUD ==============
 
     @Override
-    public AlertDetailDto create(CreateAlertRequest request) {
+    public AlertDetailDto create(Long companyId, CreateAlertRequest request) {
+        CompanyModel company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
+
         AlertModel model = alertMapper.toEntity(request);
+        model.setCompany(company);
+
         AlertModel saved = alertRepository.save(model);
+
+        // Notificar por push a los usuarios de los grupos correspondientes
         pushNotificationService.sendNewAlert(saved);
+
         return alertMapper.toDetailDto(saved);
     }
 
     @Override
-    public AlertDetailDto update(Long alertId, UpdateAlertRequest request) {
+    public AlertDetailDto update(Long companyId, Long alertId, UpdateAlertRequest request) {
         AlertModel model = alertRepository.findById(alertId)
                 .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
+
+        if (!model.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Alert does not belong to company: " + companyId);
+        }
 
         // PATCH con MapStruct (ignora nulls)
         alertMapper.updateEntityFromDto(request, model);
@@ -55,23 +70,28 @@ public class AlertServiceImpl implements AlertService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<AlertDetailDto> findById(Long alertId) {
+    public Optional<AlertDetailDto> findById(Long companyId, Long alertId) {
         return alertRepository.findById(alertId)
+                .filter(a -> a.getCompany().getId().equals(companyId))
                 .map(alertMapper::toDetailDto);
     }
 
     @Override
-    public void deleteById(Long alertId) {
-        if (!alertRepository.existsById(alertId)) {
-            throw new IllegalArgumentException("Alert not found: " + alertId);
+    public void deleteById(Long companyId, Long alertId) {
+        AlertModel model = alertRepository.findById(alertId)
+                .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
+
+        if (!model.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Alert does not belong to company: " + companyId);
         }
-        alertRepository.deleteById(alertId);
+
+        alertRepository.delete(model);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AlertSummaryDto> listAll(Pageable pageable) {
-        Page<AlertModel> page = alertRepository.findAllByOrderByEventTimeDesc(pageable);
+    public Page<AlertSummaryDto> listAll(Long companyId, Pageable pageable) {
+        Page<AlertModel> page = alertRepository.findByCompanyIdOrderByEventTimeDesc(companyId, pageable);
         return page.map(alertMapper::toSummaryDto);
     }
 
@@ -79,18 +99,21 @@ public class AlertServiceImpl implements AlertService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AlertSummaryDto> listByGroup(Long groupId, Pageable pageable) {
+    public Page<AlertSummaryDto> listByGroup(Long companyId, Long groupId, Pageable pageable) {
         NotificationGroupModel group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
+        if (!group.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Group does not belong to company: " + companyId);
+        }
+
         Set<String> vehicleCodes = group.getVehicleCodes();
         if (vehicleCodes == null || vehicleCodes.isEmpty()) {
-            // Grupo sin montacargas asignados => no hay alertas
             return Page.empty(pageable);
         }
 
         Page<AlertModel> page = alertRepository
-                .findByVehicleCodeInOrderByEventTimeDesc(vehicleCodes, pageable);
+                .findByCompanyIdAndVehicleCodeInOrderByEventTimeDesc(companyId, vehicleCodes, pageable);
 
         return page.map(alertMapper::toSummaryDto);
     }
@@ -98,6 +121,7 @@ public class AlertServiceImpl implements AlertService {
     @Override
     @Transactional(readOnly = true)
     public Page<AlertSummaryDto> listByGroupAndDateRange(
+            Long companyId,
             Long groupId,
             ZonedDateTime from,
             ZonedDateTime to,
@@ -106,14 +130,18 @@ public class AlertServiceImpl implements AlertService {
         NotificationGroupModel group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
 
+        if (!group.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Group does not belong to company: " + companyId);
+        }
+
         Set<String> vehicleCodes = group.getVehicleCodes();
         if (vehicleCodes == null || vehicleCodes.isEmpty()) {
             return Page.empty(pageable);
         }
 
         Page<AlertModel> page = alertRepository
-                .findByVehicleCodeInAndEventTimeBetweenOrderByEventTimeDesc(
-                        vehicleCodes, from, to, pageable
+                .findByCompanyIdAndVehicleCodeInAndEventTimeBetweenOrderByEventTimeDesc(
+                        companyId, vehicleCodes, from, to, pageable
                 );
 
         return page.map(alertMapper::toSummaryDto);
@@ -121,9 +149,13 @@ public class AlertServiceImpl implements AlertService {
 
     @Override
     @Transactional(readOnly = true)
-    public long countLast24hForGroup(Long groupId) {
+    public long countLast24hForGroup(Long companyId, Long groupId) {
         NotificationGroupModel group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
+
+        if (!group.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Group does not belong to company: " + companyId);
+        }
 
         Set<String> vehicleCodes = group.getVehicleCodes();
         if (vehicleCodes == null || vehicleCodes.isEmpty()) {
@@ -131,21 +163,20 @@ public class AlertServiceImpl implements AlertService {
         }
 
         ZonedDateTime cutoff = ZonedDateTime.now().minusHours(24);
-        return alertRepository.countByVehicleCodeInAndEventTimeAfter(vehicleCodes, cutoff);
+        return alertRepository.countByCompanyIdAndVehicleCodeInAndEventTimeAfter(companyId, vehicleCodes, cutoff);
     }
 
     @Override
-    public AlertDetailDto acknowledge(Long alertId) {
+    public AlertDetailDto acknowledge(Long companyId, Long alertId) {
         AlertModel model = alertRepository.findById(alertId)
                 .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
 
-        // Si ya está marcada, simplemente devolvemos el detalle
-        if (!model.isAcknowledged()) {           // 👈 AQUÍ el cambio
+        if (!model.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Alert does not belong to company: " + companyId);
+        }
+
+        if (!model.isAcknowledged()) {
             model.setAcknowledged(true);
-
-            // Si luego agregas un campo acknowledgedAt:
-            // model.setAcknowledgedAt(ZonedDateTime.now());
-
             alertRepository.save(model);
         }
 

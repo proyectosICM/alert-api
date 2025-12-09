@@ -13,6 +13,7 @@ public interface NotificationGroupMapper {
     // ======= Create DTO -> Entity =======
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "company", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -36,6 +37,7 @@ public interface NotificationGroupMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "company", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -66,7 +68,14 @@ public interface NotificationGroupMapper {
             expression =
                     "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
     )
-        // vehicleCodes se mapea automático por nombre / tipo
+    @Mapping(
+            target = "companyId",
+            expression = "java(model.getCompany() != null ? model.getCompany().getId() : null)"
+    )
+    @Mapping(
+            target = "companyName",
+            expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
+    )
     GroupDetailDto toDetailDto(NotificationGroupModel model,
                                long usersCount,
                                long alertsLast24h);
@@ -93,6 +102,14 @@ public interface NotificationGroupMapper {
                     "java(model.getVehicleCodes() != null " +
                             "? new java.util.HashSet<>(model.getVehicleCodes()) " +
                             ": java.util.Collections.emptySet())"
+    )
+    @Mapping(
+            target = "companyId",
+            expression = "java(model.getCompany() != null ? model.getCompany().getId() : null)"
+    )
+    @Mapping(
+            target = "companyName",
+            expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
     )
     GroupSummaryDto toSummaryDto(NotificationGroupModel model,
                                  long usersCount,

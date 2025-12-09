@@ -2,11 +2,11 @@ package com.icm.alert_api.services.impl;
 
 import com.icm.alert_api.models.AlertModel;
 import com.icm.alert_api.models.DeviceRegistrationModel;
+import com.icm.alert_api.models.GroupUserModel;
 import com.icm.alert_api.models.NotificationGroupModel;
-import com.icm.alert_api.models.UserModel;
 import com.icm.alert_api.repositories.DeviceRegistrationRepository;
+import com.icm.alert_api.repositories.GroupUserRepository;
 import com.icm.alert_api.repositories.NotificationGroupRepository;
-import com.icm.alert_api.repositories.UserRepository;
 import com.icm.alert_api.services.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ public class PushNotificationServiceImpl implements PushNotificationService {
 
     private final DeviceRegistrationRepository deviceRepo;
     private final NotificationGroupRepository groupRepository;
-    private final UserRepository userRepository;
+    private final GroupUserRepository groupUserRepository;
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -41,34 +41,37 @@ public class PushNotificationServiceImpl implements PushNotificationService {
             return;
         }
 
-        // 1) Buscar todos los grupos que tienen asignado ese montacargas
+        Long companyId = alert.getCompany().getId();
+
+        // 1) Buscar todos los grupos de ESA empresa que tienen asignado ese montacargas
         List<NotificationGroupModel> groups =
-                groupRepository.findByVehicleCodeAssigned(vehicleCode);
+                groupRepository.findByCompanyAndVehicleCodeAssigned(companyId, vehicleCode);
 
         if (groups.isEmpty()) {
-            log.info("No hay grupos con el montacargas {}. No se envían notificaciones.", vehicleCode);
+            log.info("No hay grupos (companyId={}, vehicleCode={}) con ese montacargas. No se envían notificaciones.",
+                    companyId, vehicleCode);
             return;
         }
 
-        // 2) Obtener IDs de grupo
         Set<Long> groupIds = groups.stream()
                 .map(NotificationGroupModel::getId)
                 .collect(Collectors.toSet());
 
-        // 3) Usuarios que pertenecen a cualquiera de esos grupos
-        List<UserModel> users = userRepository.findByNotificationGroup_IdIn(groupIds);
+        // 2) Membresías activas de esos grupos
+        List<GroupUserModel> memberships =
+                groupUserRepository.findByGroup_IdInAndActiveTrue(groupIds);
 
-        if (users.isEmpty()) {
-            log.info("No hay usuarios en grupos {} para vehicleCode={}", groupIds, vehicleCode);
+        if (memberships.isEmpty()) {
+            log.info("No hay usuarios activos en grupos {} para vehicleCode={}", groupIds, vehicleCode);
             return;
         }
 
-        // 4) IDs de usuario (sin duplicados)
-        Set<Long> userIds = users.stream()
-                .map(UserModel::getId)
+        // 3) IDs de usuario
+        Set<Long> userIds = memberships.stream()
+                .map(gu -> gu.getUser().getId())
                 .collect(Collectors.toSet());
 
-        // 5) Dispositivos activos de esos usuarios
+        // 4) Dispositivos activos de esos usuarios
         List<DeviceRegistrationModel> devices =
                 deviceRepo.findByUserIdInAndActiveTrue(userIds);
 
@@ -77,7 +80,7 @@ public class PushNotificationServiceImpl implements PushNotificationService {
             return;
         }
 
-        // 6) Construir mensajes para Expo
+        // 5) Construir mensajes para Expo
         List<Map<String, Object>> messages = new ArrayList<>();
 
         for (DeviceRegistrationModel dev : devices) {

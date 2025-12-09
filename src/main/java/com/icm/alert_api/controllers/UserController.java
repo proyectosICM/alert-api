@@ -1,6 +1,6 @@
 package com.icm.alert_api.controllers;
 
-import com.icm.alert_api.dto.user.CreateGroupUserRequest;
+import com.icm.alert_api.dto.user.CreateUserRequest;
 import com.icm.alert_api.dto.user.GroupUserDetailDto;
 import com.icm.alert_api.dto.user.GroupUserSummaryDto;
 import com.icm.alert_api.dto.user.UpdateGroupUserRequest;
@@ -28,7 +28,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<GroupUserDetailDto> createUser(
             @RequestParam("groupId") Long groupId,
-            @Valid @RequestBody CreateGroupUserRequest request
+            @Valid @RequestBody CreateUserRequest request
     ) {
         GroupUserDetailDto created = userService.create(groupId, request);
 

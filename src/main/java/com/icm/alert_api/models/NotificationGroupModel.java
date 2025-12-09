@@ -10,7 +10,21 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "notification_groups")
+@Table(
+        name = "notification_groups",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_group_company_name",
+                        columnNames = {"company_id", "name"}
+                )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_group_company_name",
+                        columnList = "company_id, name"
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -50,13 +64,21 @@ public class NotificationGroupModel {
     private Set<String> vehicleCodes = new HashSet<>();
 
     @OneToMany(
-            mappedBy = "notificationGroup",
+            mappedBy = "group",
             fetch = FetchType.LAZY,
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
     @Builder.Default
-    private Set<UserModel> users = new HashSet<>();
+    private Set<GroupUserModel> memberships = new HashSet<>();
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "company_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_group_company")
+    )
+    private CompanyModel company;
 
     @Version
     private Long version;

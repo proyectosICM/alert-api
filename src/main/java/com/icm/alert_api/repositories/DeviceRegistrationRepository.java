@@ -9,8 +9,8 @@ import java.util.List;
 
 @Repository
 public interface DeviceRegistrationRepository extends JpaRepository<DeviceRegistrationModel, Long> {
+
     List<DeviceRegistrationModel> findByUserIdAndActiveTrue(Long userId);
 
     List<DeviceRegistrationModel> findByUserIdInAndActiveTrue(Collection<Long> userIds);
 }
-

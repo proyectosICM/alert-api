@@ -17,6 +17,7 @@ public interface AlertMapper {
     // ======= Create DTO -> Entity =======
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "company", ignore = true)
     @Mapping(target = "createdAt", ignore = true)           // @CreationTimestamp
     @Mapping(target = "updatedAt", ignore = true)           // @UpdateTimestamp
     @Mapping(target = "acknowledged", constant = "false")   // recién creada = no atendida
@@ -28,6 +29,7 @@ public interface AlertMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "company", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
         // acknowledged se actualiza si viene en el request (Boolean)
@@ -42,6 +44,14 @@ public interface AlertMapper {
     @Mapping(
             target = "receivedAt",
             expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
+    )
+    @Mapping(
+            target = "companyId",
+            expression = "java(model.getCompany() != null ? model.getCompany().getId() : null)"
+    )
+    @Mapping(
+            target = "companyName",
+            expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
     )
     AlertDetailDto toDetailDto(AlertModel model);
     // El resto: vehicleCode, licensePlate, alertType, alertSubtype,
@@ -58,6 +68,14 @@ public interface AlertMapper {
     @Mapping(
             target = "receivedAt",
             expression = "java(model.getCreatedAt() != null ? model.getCreatedAt().toInstant() : null)"
+    )
+    @Mapping(
+            target = "companyId",
+            expression = "java(model.getCompany() != null ? model.getCompany().getId() : null)"
+    )
+    @Mapping(
+            target = "companyName",
+            expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
     )
     AlertSummaryDto toSummaryDto(AlertModel model);
 }

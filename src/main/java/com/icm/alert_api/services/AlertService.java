@@ -12,41 +12,29 @@ import java.util.Optional;
 
 public interface AlertService {
 
-    // ======= CRUD básico (para el script Python, etc.) =======
+    // CRUD
+    AlertDetailDto create(Long companyId, CreateAlertRequest request);
 
-    AlertDetailDto create(CreateAlertRequest request);
+    AlertDetailDto update(Long companyId, Long alertId, UpdateAlertRequest request);
 
-    AlertDetailDto update(Long alertId, UpdateAlertRequest request);
+    Optional<AlertDetailDto> findById(Long companyId, Long alertId);
 
-    Optional<AlertDetailDto> findById(Long alertId);
+    void deleteById(Long companyId, Long alertId);
 
-    void deleteById(Long alertId);
+    Page<AlertSummaryDto> listAll(Long companyId, Pageable pageable);
 
-    Page<AlertSummaryDto> listAll(Pageable pageable);
+    // Historial por grupo
+    Page<AlertSummaryDto> listByGroup(Long companyId, Long groupId, Pageable pageable);
 
-    // ======= Historial por grupo =======
-
-    /**
-     * Lista de alertas para un grupo, usando sus vehicleCodes,
-     * ordenadas de más reciente a más antigua.
-     */
-    Page<AlertSummaryDto> listByGroup(Long groupId, Pageable pageable);
-
-    /**
-     * Lista de alertas para un grupo, filtradas por rango de fechas.
-     */
     Page<AlertSummaryDto> listByGroupAndDateRange(
+            Long companyId,
             Long groupId,
             ZonedDateTime from,
             ZonedDateTime to,
             Pageable pageable
     );
 
-    /**
-     * KPI: cuántas alertas ha tenido el grupo en las últimas 24 horas.
-     * Útil para el campo alertsLast24h del GroupDetailDto.
-     */
-    long countLast24hForGroup(Long groupId);
+    long countLast24hForGroup(Long companyId, Long groupId);
 
-    AlertDetailDto acknowledge(Long alertId);
+    AlertDetailDto acknowledge(Long companyId, Long alertId);
 }

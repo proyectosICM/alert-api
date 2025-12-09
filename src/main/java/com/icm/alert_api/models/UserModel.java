@@ -7,24 +7,30 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(
         name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_group_username",
-                        columnNames = {"notification_group_id", "username"}
+                        name = "uk_user_company_username",
+                        columnNames = {"company_id", "username"}
                 ),
                 @UniqueConstraint(
-                        name = "uk_group_dni",
-                        columnNames = {"notification_group_id", "dni"}
+                        name = "uk_user_company_dni",
+                        columnNames = {"company_id", "dni"}
                 )
         },
         indexes = {
                 @Index(
-                        name = "idx_group_username",
-                        columnList = "notification_group_id, username"
+                        name = "idx_user_company_username",
+                        columnList = "company_id, username"
+                ),
+                @Index(
+                        name = "idx_user_company_dni",
+                        columnList = "company_id, dni"
                 )
         }
 )
@@ -34,7 +40,6 @@ import java.time.ZonedDateTime;
 @AllArgsConstructor
 @Builder
 public class UserModel {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -42,7 +47,7 @@ public class UserModel {
     @Column(nullable = false, length = 150)
     private String fullName;
 
-    @Column(nullable = false, length = 60)
+    @Column(length = 60)
     private String username;
 
     @Column(length = 255)
@@ -58,13 +63,17 @@ public class UserModel {
     @Column(nullable = false)
     private boolean active = true;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "notification_group_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_user_notification_group")
-    )
-    private NotificationGroupModel notificationGroup;
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<GroupUserModel> memberships = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<DeviceRegistrationModel> devices = new HashSet<>();
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_company"))
+    private CompanyModel company;
 
     @Version
     private Long version;

@@ -7,13 +7,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class CreateGroupUserRequest {
+public class CreateUserRequest {
 
     @NotBlank
     @Size(max = 150)
     private String fullName;
 
-    @NotBlank
     @Size(max = 60)
     private String username;
 
@@ -21,7 +20,6 @@ public class CreateGroupUserRequest {
     @Size(max = 15)
     private String dni;
 
-    @NotBlank
     @Size(min = 6, max = 120)
     private String password;
 
