@@ -11,9 +11,9 @@ import java.util.Optional;
 @Repository
 public interface DeviceRegistrationRepository extends JpaRepository<DeviceRegistrationModel, Long> {
 
+    Optional<DeviceRegistrationModel> findByUserIdAndExpoPushToken(Long userId, String expoPushToken);
+
     List<DeviceRegistrationModel> findByUserIdAndActiveTrue(Long userId);
 
     List<DeviceRegistrationModel> findByUserIdInAndActiveTrue(Collection<Long> userIds);
-
-    Optional<DeviceRegistrationModel> findByUserIdAndExpoPushToken(Long userId, String expoPushToken);
 }

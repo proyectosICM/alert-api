@@ -7,4 +7,5 @@ public class DeviceRegistrationRequest {
     private Long userId;
     private String expoPushToken;
     private String platform;
+    private Boolean active;
 }

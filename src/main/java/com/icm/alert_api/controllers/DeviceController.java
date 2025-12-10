@@ -24,11 +24,15 @@ public class DeviceController {
     public void register(@Valid @RequestBody DeviceRegistrationRequest dto) {
         UserModel user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + dto.getUserId())
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "User not found: " + dto.getUserId()
+                        )
                 );
 
         String expoToken = dto.getExpoPushToken();
         String platform = dto.getPlatform();
+        boolean active = dto.getActive() == null || dto.getActive(); // por defecto TRUE
 
         // 👇 buscar si ya existe registro para ese user + token
         DeviceRegistrationModel model = deviceRepo
@@ -41,9 +45,8 @@ public class DeviceController {
 
         // actualizar campos
         model.setPlatform(platform);
-        model.setActive(true); // al registrar, queda activo
+        model.setActive(active);
 
         deviceRepo.save(model);
     }
 }
-
