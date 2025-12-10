@@ -45,7 +45,14 @@ public class AlertServiceImpl implements AlertService {
             throw new IllegalArgumentException("vehicleCode is required to create an alert");
         }
 
-        // 1) Buscar grupos que tengan ese vehicleCode
+        Long companyId = request.getCompanyId();
+        if (companyId == null) {
+            throw new IllegalArgumentException("companyId is required to create an alert");
+        }
+
+        CompanyModel company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
+        /*
         var groups = groupRepository.findByVehicleCode(vehicleCode);
 
         if (groups.isEmpty()) {
@@ -67,8 +74,8 @@ public class AlertServiceImpl implements AlertService {
                             "no se puede determinar companyId de forma unívoca."
             );
         }
+*/
 
-        // 2) Mapear la alerta y setear la empresa resuelta
         AlertModel model = alertMapper.toEntity(request);
         model.setCompany(company);
 

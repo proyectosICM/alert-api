@@ -88,4 +88,7 @@ public class CreateAlertRequest {
      */
     @NotBlank
     private String rawPayload;
+
+    @NotNull
+    private Long companyId;
 }
