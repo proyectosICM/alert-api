@@ -144,7 +144,7 @@ public class AlertModel {
      * Siempre lo guardamos para poder reprocesar si cambia el parser.
      */
     @Lob
-    @Column(name = "raw_payload", nullable = false)
+    @Column(name = "raw_payload", nullable = false, columnDefinition = "LONGTEXT")
     private String rawPayload;
 
     @Column(nullable = false)
