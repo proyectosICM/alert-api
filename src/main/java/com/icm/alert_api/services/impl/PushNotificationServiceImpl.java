@@ -1,5 +1,7 @@
 package com.icm.alert_api.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper; // 👈 IMPORT CORRECTO
+
 import com.icm.alert_api.models.AlertModel;
 import com.icm.alert_api.models.DeviceRegistrationModel;
 import com.icm.alert_api.models.GroupUserModel;
@@ -10,10 +12,10 @@ import com.icm.alert_api.repositories.NotificationGroupRepository;
 import com.icm.alert_api.services.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup; // 👈 jsoup
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,6 +34,17 @@ public class PushNotificationServiceImpl implements PushNotificationService {
 
     private static final String EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
+    /**
+     * Convierte un string HTML a texto plano sin etiquetas
+     * y con entidades (&nbsp;, &amp;, etc.) resueltas.
+     */
+    private String toPlainText(String html) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+        return Jsoup.parse(html).text();
+    }
+
     @Override
     public void sendNewAlert(AlertModel alert) {
         String vehicleCode = alert.getVehicleCode();
@@ -43,7 +56,7 @@ public class PushNotificationServiceImpl implements PushNotificationService {
 
         Long companyId = alert.getCompany().getId();
 
-        // 1) Buscar todos los grupos de ESA empresa que tienen asignado ese montacargas
+        // 1) Buscar todos los grupos de esa empresa que tienen asignado ese montacargas
         List<NotificationGroupModel> groups =
                 groupRepository.findByCompanyAndVehicleCodeAssigned(companyId, vehicleCode);
 
@@ -84,15 +97,21 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         List<Map<String, Object>> messages = new ArrayList<>();
 
         for (DeviceRegistrationModel dev : devices) {
+
+            // 🔹 Limpiar HTML de la shortDescription
+            String rawDescription = alert.getShortDescription();
+            String plainDescription = toPlainText(rawDescription);
+
+            String bodyText =
+                    (plainDescription != null && !plainDescription.isBlank())
+                            ? plainDescription
+                            : "Nueva alerta del montacargas " + vehicleCode;
+
             Map<String, Object> msg = new HashMap<>();
             msg.put("to", dev.getExpoPushToken());
             msg.put("sound", "default");
             msg.put("title", "Alerta " + alert.getAlertType());
-            msg.put("body",
-                    Optional.ofNullable(alert.getShortDescription())
-                            .filter(s -> !s.isBlank())
-                            .orElse("Nueva alerta del montacargas " + vehicleCode)
-            );
+            msg.put("body", bodyText); // 👈 ya sin etiquetas HTML
             msg.put("data", Map.of(
                     "alertId", alert.getId(),
                     "vehicleCode", vehicleCode
