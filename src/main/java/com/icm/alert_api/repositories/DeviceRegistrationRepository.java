@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DeviceRegistrationRepository extends JpaRepository<DeviceRegistrationModel, Long> {
@@ -13,4 +14,6 @@ public interface DeviceRegistrationRepository extends JpaRepository<DeviceRegist
     List<DeviceRegistrationModel> findByUserIdAndActiveTrue(Long userId);
 
     List<DeviceRegistrationModel> findByUserIdInAndActiveTrue(Collection<Long> userIds);
+
+    Optional<DeviceRegistrationModel> findByUserIdAndExpoPushToken(Long userId, String expoPushToken);
 }

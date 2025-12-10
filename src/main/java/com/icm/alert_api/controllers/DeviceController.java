@@ -27,13 +27,23 @@ public class DeviceController {
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + dto.getUserId())
                 );
 
-        DeviceRegistrationModel model = DeviceRegistrationModel.builder()
-                .user(user)                              // <-- aquí va el UserModel
-                .expoPushToken(dto.getExpoPushToken())
-                .platform(dto.getPlatform())
-                .active(true)
-                .build();
+        String expoToken = dto.getExpoPushToken();
+        String platform = dto.getPlatform();
+
+        // 👇 buscar si ya existe registro para ese user + token
+        DeviceRegistrationModel model = deviceRepo
+                .findByUserIdAndExpoPushToken(user.getId(), expoToken)
+                .orElseGet(() -> DeviceRegistrationModel.builder()
+                        .user(user)
+                        .expoPushToken(expoToken)
+                        .build()
+                );
+
+        // actualizar campos
+        model.setPlatform(platform);
+        model.setActive(true); // al registrar, queda activo
 
         deviceRepo.save(model);
     }
 }
+
