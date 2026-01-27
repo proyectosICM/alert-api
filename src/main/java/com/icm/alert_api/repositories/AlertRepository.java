@@ -10,6 +10,13 @@ import java.util.Collection;
 
 public interface AlertRepository extends JpaRepository<AlertModel, Long> {
 
+    // Total de alertas en un dia
+    long countByCompany_IdAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+            Long companyId,
+            ZonedDateTime fromInclusive,
+            ZonedDateTime toExclusive
+    );
+
     /**
      * Historial de alertas para una lista de montacargas
      * de una empresa concreta, ordenado de más reciente a más antiguo.

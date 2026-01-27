@@ -1,19 +1,19 @@
 package com.icm.alert_api.controllers;
 
-import com.icm.alert_api.dto.alert.AlertDetailDto;
-import com.icm.alert_api.dto.alert.AlertSummaryDto;
-import com.icm.alert_api.dto.alert.CreateAlertRequest;
-import com.icm.alert_api.dto.alert.UpdateAlertRequest;
+import com.icm.alert_api.dto.alert.*;
 import com.icm.alert_api.services.AlertService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 
@@ -174,5 +174,16 @@ public class AlertController {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
+    }
+
+    @GetMapping("/count")
+    public AlertCountResponse countByDay(
+            @PathVariable Long companyId,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(value = "zone", required = false, defaultValue = "America/Lima") String zone
+    ) {
+        ZoneId zoneId = ZoneId.of(zone);
+        long total = alertService.countByDay(companyId, date, zoneId);
+        return new AlertCountResponse(total);
     }
 }

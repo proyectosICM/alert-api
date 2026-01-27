@@ -7,6 +7,8 @@ import com.icm.alert_api.dto.alert.UpdateAlertRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -39,4 +41,6 @@ public interface AlertService {
     AlertDetailDto acknowledge(Long companyId, Long alertId);
 
     Page<AlertSummaryDto> listByUser(Long companyId, Long userId, Pageable pageable);
+
+    long countByDay(Long companyId, LocalDate day, ZoneId zone);
 }

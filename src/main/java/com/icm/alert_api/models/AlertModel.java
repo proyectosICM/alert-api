@@ -52,7 +52,7 @@ public class AlertModel {
      * Placa/patente visible en el correo.
      * En algunos correos viene además del código interno.
      */
-    @Column(name = "license_plate", length = 50)
+        @Column(name = "license_plate", length = 50)
     private String licensePlate;
 
     /**

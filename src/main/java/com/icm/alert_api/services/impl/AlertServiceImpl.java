@@ -18,6 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
@@ -257,6 +259,21 @@ public class AlertServiceImpl implements AlertService {
                 );
 
         return page.map(alertMapper::toSummaryDto);
+    }
+
+    @Override
+    public long countByDay(Long companyId, LocalDate day, ZoneId zone) {
+        // Inicio del día en zona seleccionada
+        ZonedDateTime from = day.atStartOfDay(zone);
+
+        // Fin exclusivo (día siguiente 00:00)
+        ZonedDateTime to = day.plusDays(1).atStartOfDay(zone);
+
+        return alertRepository.countByCompany_IdAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+                companyId,
+                from,
+                to
+        );
     }
 
 }
