@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.Set;
 
 public interface AlertService {
 
@@ -43,4 +44,16 @@ public interface AlertService {
     Page<AlertSummaryDto> listByUser(Long companyId, Long userId, Pageable pageable);
 
     long countByDay(Long companyId, LocalDate day, ZoneId zone);
+
+
+    Page<AlertSummaryDto> search(
+            Long companyId,
+            Set<String> alertTypes,
+            Long fleetId,
+            Long groupId,
+            ZonedDateTime from,
+            ZonedDateTime to,
+            Boolean acknowledged,
+            Pageable pageable
+    );
 }

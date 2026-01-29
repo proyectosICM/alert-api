@@ -4,11 +4,12 @@ import com.icm.alert_api.models.AlertModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.ZonedDateTime;
 import java.util.Collection;
 
-public interface AlertRepository extends JpaRepository<AlertModel, Long> {
+public interface AlertRepository extends JpaRepository<AlertModel, Long>, JpaSpecificationExecutor<AlertModel> {
 
     // Total de alertas en un dia
     long countByCompany_IdAndEventTimeGreaterThanEqualAndEventTimeLessThan(

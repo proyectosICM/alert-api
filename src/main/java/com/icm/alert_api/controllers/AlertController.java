@@ -17,6 +17,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/alerts")
 @RequiredArgsConstructor
@@ -185,5 +189,43 @@ public class AlertController {
         ZoneId zoneId = ZoneId.of(zone);
         long total = alertService.countByDay(companyId, date, zoneId);
         return new AlertCountResponse(total);
+    }
+
+    @GetMapping("/search")
+    public Page<AlertSummaryDto> search(
+            @RequestParam("companyId") Long companyId,
+            @RequestParam(value = "types", required = false) String types, // CSV
+            @RequestParam(value = "fleetId", required = false) Long fleetId,
+            @RequestParam(value = "groupId", required = false) Long groupId,
+            @RequestParam(value = "ack", required = false) Boolean acknowledged,
+            @RequestParam(value = "from", required = false) String from,
+            @RequestParam(value = "to", required = false) String to,
+            Pageable pageable
+    ) {
+        try {
+            Set<String> alertTypes = null;
+            if (types != null && !types.isBlank()) {
+                alertTypes = Arrays.stream(types.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isBlank())
+                        .collect(Collectors.toSet());
+            }
+
+            ZonedDateTime fromDt = null;
+            ZonedDateTime toDt = null;
+            if (from != null && !from.isBlank()) fromDt = ZonedDateTime.parse(from);
+            if (to != null && !to.isBlank()) toDt = ZonedDateTime.parse(to);
+
+            return alertService.search(companyId, alertTypes, fleetId, groupId, fromDt, toDt, acknowledged, pageable);
+
+        } catch (DateTimeParseException ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Formato de fecha inválido para 'from' o 'to'. Usa ISO-8601 (ej: 2026-01-26T00:00:00-05:00)",
+                    ex
+            );
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
     }
 }

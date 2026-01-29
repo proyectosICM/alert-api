@@ -11,18 +11,26 @@ import com.icm.alert_api.models.NotificationGroupModel;
 import com.icm.alert_api.models.UserModel;
 import com.icm.alert_api.repositories.*;
 import com.icm.alert_api.services.AlertService;
+import com.icm.alert_api.services.FleetService;
 import com.icm.alert_api.services.PushNotificationService;
+import com.icm.alert_api.specs.AlertSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +45,7 @@ public class AlertServiceImpl implements AlertService {
 
     private final GroupUserRepository groupUserRepository;
     private final UserRepository userRepository;
+    private final FleetService fleetService;
 
     // ============== CRUD ==============
 
@@ -274,6 +283,111 @@ public class AlertServiceImpl implements AlertService {
                 from,
                 to
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AlertSummaryDto> search(
+            Long companyId,
+            Set<String> alertTypes,
+            Long fleetId,
+            Long groupId,
+            ZonedDateTime from,
+            ZonedDateTime to,
+            Boolean acknowledged,
+            Pageable pageable
+    ) {
+        if (companyId == null) {
+            throw new IllegalArgumentException("companyId is required");
+        }
+
+        // 1) Resolver vehicleCodes según fleetId / groupId
+        Set<String> vehicleCodes = null;
+
+        if (fleetId != null) {
+            List<String> fleetCodes = fleetService.getVehicleCodes(companyId, fleetId);
+            Set<String> fleetSet = fleetCodes.stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+            vehicleCodes = (vehicleCodes == null) ? fleetSet : intersect(vehicleCodes, fleetSet);
+        }
+
+        if (groupId != null) {
+            NotificationGroupModel group = groupRepository.findById(groupId)
+                    .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
+
+            if (!group.getCompany().getId().equals(companyId)) {
+                throw new IllegalArgumentException("Group does not belong to company: " + companyId);
+            }
+
+            Set<String> groupSet = (group.getVehicleCodes() == null)
+                    ? Set.of()
+                    : group.getVehicleCodes().stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+
+            vehicleCodes = (vehicleCodes == null) ? new HashSet<>(groupSet) : intersect(vehicleCodes, groupSet);
+        }
+
+        // Si pidieron filtro por fleet/group y quedó vacío => no hay nada que buscar
+        if ((fleetId != null || groupId != null) && (vehicleCodes == null || vehicleCodes.isEmpty())) {
+            return Page.empty(pageable);
+        }
+
+        // 2) Normalizar alertTypes
+        Set<String> typesNorm = null;
+        if (alertTypes != null && !alertTypes.isEmpty()) {
+            typesNorm = alertTypes.stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .map(String::trim)
+                    .collect(Collectors.toSet());
+            if (typesNorm.isEmpty()) typesNorm = null;
+        }
+
+        // 3) Pageable con sort default si no viene sort
+        Pageable effectivePageable = pageable;
+        if (pageable.getSort() == null || pageable.getSort().isUnsorted()) {
+            effectivePageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by(Sort.Direction.DESC, "eventTime")
+            );
+        }
+
+        // 4) Construir Specification
+        Specification<AlertModel> spec = Specification.where(AlertSpecifications.companyId(companyId));
+
+        if (typesNorm != null) {
+            spec = spec.and(AlertSpecifications.alertTypeIn(typesNorm));
+        }
+
+        if (vehicleCodes != null && !vehicleCodes.isEmpty()) {
+            spec = spec.and(AlertSpecifications.vehicleCodeIn(vehicleCodes));
+        }
+
+        if (acknowledged != null) {
+            spec = spec.and(AlertSpecifications.acknowledged(acknowledged));
+        }
+
+        if (from != null) {
+            spec = spec.and(AlertSpecifications.eventTimeFrom(from));
+        }
+
+        if (to != null) {
+            spec = spec.and(AlertSpecifications.eventTimeTo(to));
+        }
+
+        // 5) Ejecutar query y mapear
+        return alertRepository.findAll(spec, effectivePageable)
+                .map(alertMapper::toSummaryDto);
+    }
+
+    private Set<String> intersect(Set<String> a, Set<String> b) {
+        Set<String> res = new HashSet<>(a);
+        res.retainAll(b);
+        return res;
     }
 
 }
