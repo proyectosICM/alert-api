@@ -178,7 +178,7 @@ public class AlertController {
 
     @GetMapping("/count")
     public AlertCountResponse countByDay(
-            @PathVariable Long companyId,
+            @RequestParam Long companyId,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(value = "zone", required = false, defaultValue = "America/Lima") String zone
     ) {
