@@ -12,10 +12,14 @@ public class VehicleSummaryDto {
 
     Long id;
 
+    Long companyId;
+    String companyName;
+
     String vehicleCodeNorm;
     String licensePlate;
 
     VehicleStatus status;
 
+    Instant createdAt;
     Instant updatedAt;
 }
