@@ -20,6 +20,6 @@ public class VehicleSummaryDto {
 
     VehicleStatus status;
 
-    Instant createdAt;
+    //Instant createdAt;
     Instant updatedAt;
 }
