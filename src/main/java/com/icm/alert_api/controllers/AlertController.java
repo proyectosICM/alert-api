@@ -184,10 +184,11 @@ public class AlertController {
     public AlertCountResponse countByDay(
             @RequestParam Long companyId,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(value = "zone", required = false, defaultValue = "America/Lima") String zone
+            @RequestParam(value = "zone", required = false, defaultValue = "America/Lima") String zone,
+            @RequestParam(value = "fleetId", required = false) Long fleetId
     ) {
         ZoneId zoneId = ZoneId.of(zone);
-        long total = alertService.countByDay(companyId, date, zoneId);
+        long total = alertService.countByDay(companyId, date, zoneId, fleetId);
         return new AlertCountResponse(total);
     }
 

@@ -43,7 +43,7 @@ public interface AlertService {
 
     Page<AlertSummaryDto> listByUser(Long companyId, Long userId, Pageable pageable);
 
-    long countByDay(Long companyId, LocalDate day, ZoneId zone);
+    long countByDay(Long companyId, LocalDate day, ZoneId zone, Long fleetId);
 
 
     Page<AlertSummaryDto> search(

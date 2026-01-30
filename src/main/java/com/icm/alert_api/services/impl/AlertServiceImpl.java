@@ -271,17 +271,26 @@ public class AlertServiceImpl implements AlertService {
     }
 
     @Override
-    public long countByDay(Long companyId, LocalDate day, ZoneId zone) {
-        // Inicio del día en zona seleccionada
+    public long countByDay(Long companyId, LocalDate day, ZoneId zone, Long fleetId) {
         ZonedDateTime from = day.atStartOfDay(zone);
-
-        // Fin exclusivo (día siguiente 00:00)
         ZonedDateTime to = day.plusDays(1).atStartOfDay(zone);
 
-        return alertRepository.countByCompany_IdAndEventTimeGreaterThanEqualAndEventTimeLessThan(
-                companyId,
-                from,
-                to
+        if (fleetId == null) {
+            return alertRepository.countByCompany_IdAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+                    companyId, from, to
+            );
+        }
+
+        List<String> fleetCodes = fleetService.getVehicleCodes(companyId, fleetId);
+        Set<String> codes = fleetCodes.stream()
+                .filter(s -> s != null && !s.isBlank())
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        if (codes.isEmpty()) return 0L;
+
+        return alertRepository.countByCompany_IdAndVehicleCodeInAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+                companyId, codes, from, to
         );
     }
 

@@ -8,8 +8,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Set;
 
-public interface AlertRepository extends JpaRepository<AlertModel, Long>, JpaSpecificationExecutor<AlertModel> {
+public interface    AlertRepository extends JpaRepository<AlertModel, Long>, JpaSpecificationExecutor<AlertModel> {
 
     // Total de alertas en un dia
     long countByCompany_IdAndEventTimeGreaterThanEqualAndEventTimeLessThan(
@@ -70,4 +71,11 @@ public interface AlertRepository extends JpaRepository<AlertModel, Long>, JpaSpe
     );
 
     long countByCompany_Id(Long companyId);
+
+    long countByCompany_IdAndVehicleCodeInAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+            Long companyId,
+            Set<String> vehicleCodes,
+            ZonedDateTime from,
+            ZonedDateTime to
+    );
 }
