@@ -95,7 +95,7 @@ public class WebSecurityConfig {
                     auth.requestMatchers("/api/companies/**").permitAll();
                     auth.requestMatchers("/api/users/**").permitAll();
                     auth.requestMatchers("/api/alerts/**").permitAll();
-                    auth.requestMatchers("/api/alerts/**").permitAll();
+                    auth.requestMatchers("/api/vehicles/**").permitAll();
 
                     auth.requestMatchers("/swagger-ui/**").permitAll();
                     auth.requestMatchers("/doc/**").permitAll();
