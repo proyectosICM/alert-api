@@ -3,6 +3,8 @@ package com.icm.alert_api.dto.fleet;
 import lombok.Builder;
 import lombok.Value;
 
+import java.util.Set;
+
 @Value
 @Builder
 public class FleetSummaryDto {
@@ -17,8 +19,6 @@ public class FleetSummaryDto {
 
     boolean active;
 
-    /**
-     * Para listar rápido sin mandar el set completo.
-     */
+    Set<String> vehicleCodes;
     long vehiclesCount;
 }

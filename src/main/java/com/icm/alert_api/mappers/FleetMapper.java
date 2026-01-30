@@ -22,7 +22,7 @@ public interface FleetMapper {
     @Mapping(target = "updatedAt", ignore = true) // @UpdateTimestamp
     @Mapping(target = "version", ignore = true)
     FleetModel toEntity(CreateFleetRequest request);
-    // name, description, active, vehicleCodes se mapean por nombre (si están en el DTO).
+    // name, description, active, vehicleCodes se mapean por nombre
 
     // ======= Update DTO -> Entity (PATCH) =======
 
@@ -55,6 +55,7 @@ public interface FleetMapper {
     FleetDetailDto toDetailDto(FleetModel model);
 
     // ======= Entity -> Summary DTO =======
+    // ✅ Ahora Summary incluye vehicleCodes + vehiclesCount
 
     @Mapping(
             target = "companyId",
@@ -63,6 +64,10 @@ public interface FleetMapper {
     @Mapping(
             target = "companyName",
             expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
+    )
+    @Mapping(
+            target = "vehicleCodes",
+            expression = "java(model.getVehicleCodes() != null ? model.getVehicleCodes() : java.util.Set.of())"
     )
     @Mapping(
             target = "vehiclesCount",
