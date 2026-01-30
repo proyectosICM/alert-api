@@ -26,10 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,6 +44,119 @@ public class AlertServiceImpl implements AlertService {
     private final UserRepository userRepository;
     private final FleetService fleetService;
 
+    // ============================================================
+    // Helpers: normalización + regla "placa manda"
+    // ============================================================
+
+    private Set<String> normalizeSet(Set<String> in) {
+        if (in == null) return Set.of();
+        return in.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Set<String> normalizeListToSet(List<String> in) {
+        if (in == null) return Set.of();
+        return in.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Set<String> intersect(Set<String> a, Set<String> b) {
+        Set<String> res = new HashSet<>(a);
+        res.retainAll(b);
+        return res;
+    }
+
+    private record VehicleFilter(Set<String> plates, Set<String> codes) {
+        boolean hasPlates() { return plates != null && !plates.isEmpty(); }
+        boolean hasCodes()  { return codes != null && !codes.isEmpty(); }
+    }
+
+    /**
+     * Regla:
+     * - Si hay placas => usar placas (principal)
+     * - Si no hay placas pero hay codes => usar codes (fallback)
+     */
+    private VehicleFilter groupVehicleFilter(NotificationGroupModel group) {
+        Set<String> plates = normalizeSet(group.getVehiclePlates());
+        Set<String> codes  = normalizeSet(group.getVehicleCodes());
+        return new VehicleFilter(plates, codes);
+    }
+
+    /**
+     * Si fleetService todavía NO tiene getVehiclePlates, agrega ese método.
+     * Si aún no puedes, puedes mapear codes -> placas en otro lado, pero lo ideal:
+     * FleetService.getVehiclePlates(companyId, fleetId)
+     */
+    private VehicleFilter fleetVehicleFilter(Long companyId, Long fleetId) {
+        Set<String> plates = Set.of();
+        try {
+            // ✅ esperado (recomendado)
+            List<String> fleetPlates = fleetService.getVehiclePlates(companyId, fleetId);
+            plates = normalizeListToSet(fleetPlates);
+        } catch (Exception ignored) {
+            // Si tu FleetService aún no tiene getVehiclePlates, no revientes:
+            plates = Set.of();
+        }
+
+        List<String> fleetCodes = fleetService.getVehicleCodes(companyId, fleetId);
+        Set<String> codes = normalizeListToSet(fleetCodes);
+
+        return new VehicleFilter(plates, codes);
+    }
+
+    /**
+     * Para search: combinar filtros de fleet + group con intersección,
+     * pero siempre priorizando placas si existen.
+     */
+    private VehicleFilter resolveVehicleFilter(Long companyId, Long fleetId, Long groupId) {
+        Set<String> plates = null;
+        Set<String> codes = null;
+
+        if (fleetId != null) {
+            VehicleFilter fv = fleetVehicleFilter(companyId, fleetId);
+            Set<String> fleetPlates = fv.plates();
+            Set<String> fleetCodes  = fv.codes();
+
+            if (!fleetPlates.isEmpty()) {
+                plates = (plates == null) ? new HashSet<>(fleetPlates) : intersect(plates, fleetPlates);
+            }
+            if (!fleetCodes.isEmpty()) {
+                codes = (codes == null) ? new HashSet<>(fleetCodes) : intersect(codes, fleetCodes);
+            }
+        }
+
+        if (groupId != null) {
+            NotificationGroupModel group = groupRepository.findById(groupId)
+                    .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
+
+            if (!group.getCompany().getId().equals(companyId)) {
+                throw new IllegalArgumentException("Group does not belong to company: " + companyId);
+            }
+
+            VehicleFilter gv = groupVehicleFilter(group);
+            Set<String> groupPlates = gv.plates();
+            Set<String> groupCodes  = gv.codes();
+
+            if (!groupPlates.isEmpty()) {
+                plates = (plates == null) ? new HashSet<>(groupPlates) : intersect(plates, groupPlates);
+            }
+            if (!groupCodes.isEmpty()) {
+                codes = (codes == null) ? new HashSet<>(groupCodes) : intersect(codes, groupCodes);
+            }
+        }
+
+        if (plates == null) plates = Set.of();
+        if (codes == null) codes = Set.of();
+
+        return new VehicleFilter(plates, codes);
+    }
+
     // ============== CRUD ==============
 
     @Override
@@ -63,41 +173,17 @@ public class AlertServiceImpl implements AlertService {
 
         CompanyModel company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
-        /*
-        var groups = groupRepository.findByVehicleCode(vehicleCode);
-
-        if (groups.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "No se encontró ningún grupo con el vehicleCode: " + vehicleCode
-            );
-        }
-
-        // Opcional: si hay más de un grupo, verificar que todas las empresas sean la misma
-        CompanyModel company = groups.get(0).getCompany();
-        boolean multipleCompanies = groups.stream()
-                .map(g -> g.getCompany().getId())
-                .distinct()
-                .count() > 1;
-
-        if (multipleCompanies) {
-            throw new IllegalArgumentException(
-                    "El vehicleCode " + vehicleCode + " está asociado a múltiples compañías; " +
-                            "no se puede determinar companyId de forma unívoca."
-            );
-        }
-*/
 
         AlertModel model = alertMapper.toEntity(request);
         model.setCompany(company);
 
         AlertModel saved = alertRepository.save(model);
 
-        // 3) Notificar por push a los usuarios de los grupos correspondientes
+        // Notificar por push
         pushNotificationService.sendNewAlert(saved);
 
         return alertMapper.toDetailDto(saved);
     }
-
 
     @Override
     public AlertDetailDto update(Long companyId, Long alertId, UpdateAlertRequest request) {
@@ -108,7 +194,6 @@ public class AlertServiceImpl implements AlertService {
             throw new IllegalArgumentException("Alert does not belong to company: " + companyId);
         }
 
-        // PATCH con MapStruct (ignora nulls)
         alertMapper.updateEntityFromDto(request, model);
 
         AlertModel updated = alertRepository.save(model);
@@ -142,7 +227,7 @@ public class AlertServiceImpl implements AlertService {
         return page.map(alertMapper::toSummaryDto);
     }
 
-    // ============== Historial por grupo ==============
+    // ============== Historial por grupo (placa primero) ==============
 
     @Override
     @Transactional(readOnly = true)
@@ -154,15 +239,21 @@ public class AlertServiceImpl implements AlertService {
             throw new IllegalArgumentException("Group does not belong to company: " + companyId);
         }
 
-        Set<String> vehicleCodes = group.getVehicleCodes();
-        if (vehicleCodes == null || vehicleCodes.isEmpty()) {
-            return Page.empty(pageable);
+        VehicleFilter vf = groupVehicleFilter(group);
+
+        if (vf.hasPlates()) {
+            Page<AlertModel> page = alertRepository
+                    .findByCompanyIdAndLicensePlateInOrderByEventTimeDesc(companyId, vf.plates(), pageable);
+            return page.map(alertMapper::toSummaryDto);
         }
 
-        Page<AlertModel> page = alertRepository
-                .findByCompanyIdAndVehicleCodeInOrderByEventTimeDesc(companyId, vehicleCodes, pageable);
+        if (vf.hasCodes()) {
+            Page<AlertModel> page = alertRepository
+                    .findByCompanyIdAndVehicleCodeInOrderByEventTimeDesc(companyId, vf.codes(), pageable);
+            return page.map(alertMapper::toSummaryDto);
+        }
 
-        return page.map(alertMapper::toSummaryDto);
+        return Page.empty(pageable);
     }
 
     @Override
@@ -181,17 +272,25 @@ public class AlertServiceImpl implements AlertService {
             throw new IllegalArgumentException("Group does not belong to company: " + companyId);
         }
 
-        Set<String> vehicleCodes = group.getVehicleCodes();
-        if (vehicleCodes == null || vehicleCodes.isEmpty()) {
-            return Page.empty(pageable);
+        VehicleFilter vf = groupVehicleFilter(group);
+
+        if (vf.hasPlates()) {
+            Page<AlertModel> page = alertRepository
+                    .findByCompanyIdAndLicensePlateInAndEventTimeBetweenOrderByEventTimeDesc(
+                            companyId, vf.plates(), from, to, pageable
+                    );
+            return page.map(alertMapper::toSummaryDto);
         }
 
-        Page<AlertModel> page = alertRepository
-                .findByCompanyIdAndVehicleCodeInAndEventTimeBetweenOrderByEventTimeDesc(
-                        companyId, vehicleCodes, from, to, pageable
-                );
+        if (vf.hasCodes()) {
+            Page<AlertModel> page = alertRepository
+                    .findByCompanyIdAndVehicleCodeInAndEventTimeBetweenOrderByEventTimeDesc(
+                            companyId, vf.codes(), from, to, pageable
+                    );
+            return page.map(alertMapper::toSummaryDto);
+        }
 
-        return page.map(alertMapper::toSummaryDto);
+        return Page.empty(pageable);
     }
 
     @Override
@@ -204,13 +303,15 @@ public class AlertServiceImpl implements AlertService {
             throw new IllegalArgumentException("Group does not belong to company: " + companyId);
         }
 
-        Set<String> vehicleCodes = group.getVehicleCodes();
-        if (vehicleCodes == null || vehicleCodes.isEmpty()) {
-            return 0L;
-        }
+        VehicleFilter vf = groupVehicleFilter(group);
+        if (!vf.hasPlates() && !vf.hasCodes()) return 0L;
 
         ZonedDateTime cutoff = ZonedDateTime.now().minusHours(24);
-        return alertRepository.countByCompanyIdAndVehicleCodeInAndEventTimeAfter(companyId, vehicleCodes, cutoff);
+
+        if (vf.hasPlates()) {
+            return alertRepository.countByCompanyIdAndLicensePlateInAndEventTimeAfter(companyId, vf.plates(), cutoff);
+        }
+        return alertRepository.countByCompanyIdAndVehicleCodeInAndEventTimeAfter(companyId, vf.codes(), cutoff);
     }
 
     @Override
@@ -230,45 +331,63 @@ public class AlertServiceImpl implements AlertService {
         return alertMapper.toDetailDto(model);
     }
 
+    // ============== Alertas por usuario (placa primero) ==============
+
     @Override
     @Transactional(readOnly = true)
     public Page<AlertSummaryDto> listByUser(Long companyId, Long userId, Pageable pageable) {
-        // 1) Validar que el usuario existe
         UserModel user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-        // 2) Validar que pertenece a la empresa
         if (!user.getCompany().getId().equals(companyId)) {
-            throw new IllegalArgumentException(
-                    "User does not belong to company: " + companyId
-            );
+            throw new IllegalArgumentException("User does not belong to company: " + companyId);
         }
 
-        // 3) Obtener grupos activos del usuario
         var memberships = groupUserRepository.findByUser_IdAndActiveTrue(userId);
         if (memberships.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        // 4) Unir todos los vehicleCodes de los grupos
-        Set<String> vehicleCodes = memberships.stream()
+        // ✅ juntar placas primero
+        Set<String> plates = memberships.stream()
                 .map(m -> m.getGroup())
-                .filter(g -> g.getVehicleCodes() != null)
-                .flatMap(g -> g.getVehicleCodes().stream())
-                .collect(java.util.stream.Collectors.toSet());
+                .filter(Objects::nonNull)
+                .map(NotificationGroupModel::getVehiclePlates)
+                .filter(Objects::nonNull)
+                .flatMap(Set::stream)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
 
-        if (vehicleCodes.isEmpty()) {
+        if (!plates.isEmpty()) {
+            return alertRepository
+                    .findByCompanyIdAndLicensePlateInOrderByEventTimeDesc(companyId, plates, pageable)
+                    .map(alertMapper::toSummaryDto);
+        }
+
+        // fallback: codes
+        Set<String> codes = memberships.stream()
+                .map(m -> m.getGroup())
+                .filter(Objects::nonNull)
+                .map(NotificationGroupModel::getVehicleCodes)
+                .filter(Objects::nonNull)
+                .flatMap(Set::stream)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
+
+        if (codes.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        // 5) Buscar alertas por company + vehicleCodes, ordenadas por fecha desc
-        Page<AlertModel> page = alertRepository
-                .findByCompanyIdAndVehicleCodeInOrderByEventTimeDesc(
-                        companyId, vehicleCodes, pageable
-                );
-
-        return page.map(alertMapper::toSummaryDto);
+        return alertRepository
+                .findByCompanyIdAndVehicleCodeInOrderByEventTimeDesc(companyId, codes, pageable)
+                .map(alertMapper::toSummaryDto);
     }
+
+    // ============== KPI countByDay (placa primero) ==============
 
     @Override
     public long countByDay(Long companyId, LocalDate day, ZoneId zone, Long fleetId) {
@@ -281,18 +400,26 @@ public class AlertServiceImpl implements AlertService {
             );
         }
 
-        List<String> fleetCodes = fleetService.getVehicleCodes(companyId, fleetId);
-        Set<String> codes = fleetCodes.stream()
-                .filter(s -> s != null && !s.isBlank())
-                .map(String::trim)
-                .collect(Collectors.toSet());
+        VehicleFilter fv = fleetVehicleFilter(companyId, fleetId);
 
-        if (codes.isEmpty()) return 0L;
+        // ✅ principal: placas
+        if (fv.hasPlates()) {
+            return alertRepository.countByCompanyIdAndLicensePlateInAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+                    companyId, fv.plates(), from, to
+            );
+        }
 
-        return alertRepository.countByCompany_IdAndVehicleCodeInAndEventTimeGreaterThanEqualAndEventTimeLessThan(
-                companyId, codes, from, to
-        );
+        // fallback: codes
+        if (fv.hasCodes()) {
+            return alertRepository.countByCompany_IdAndVehicleCodeInAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+                    companyId, fv.codes(), from, to
+            );
+        }
+
+        return 0L;
     }
+
+    // ============== SEARCH (placa primero) ==============
 
     @Override
     @Transactional(readOnly = true)
@@ -310,49 +437,23 @@ public class AlertServiceImpl implements AlertService {
             throw new IllegalArgumentException("companyId is required");
         }
 
-        // 1) Resolver vehicleCodes según fleetId / groupId
-        Set<String> vehicleCodes = null;
-
-        if (fleetId != null) {
-            List<String> fleetCodes = fleetService.getVehicleCodes(companyId, fleetId);
-            Set<String> fleetSet = fleetCodes.stream()
-                    .filter(s -> s != null && !s.isBlank())
-                    .map(String::trim)
-                    .collect(Collectors.toSet());
-            vehicleCodes = (vehicleCodes == null) ? fleetSet : intersect(vehicleCodes, fleetSet);
-        }
-
-        if (groupId != null) {
-            NotificationGroupModel group = groupRepository.findById(groupId)
-                    .orElseThrow(() -> new IllegalArgumentException("Group not found: " + groupId));
-
-            if (!group.getCompany().getId().equals(companyId)) {
-                throw new IllegalArgumentException("Group does not belong to company: " + companyId);
-            }
-
-            Set<String> groupSet = (group.getVehicleCodes() == null)
-                    ? Set.of()
-                    : group.getVehicleCodes().stream()
-                    .filter(s -> s != null && !s.isBlank())
-                    .map(String::trim)
-                    .collect(Collectors.toSet());
-
-            vehicleCodes = (vehicleCodes == null) ? new HashSet<>(groupSet) : intersect(vehicleCodes, groupSet);
-        }
+        // 1) Resolver filtros (fleet+group) con regla placa primero
+        VehicleFilter vf = resolveVehicleFilter(companyId, fleetId, groupId);
 
         // Si pidieron filtro por fleet/group y quedó vacío => no hay nada que buscar
-        if ((fleetId != null || groupId != null) && (vehicleCodes == null || vehicleCodes.isEmpty())) {
+        if ((fleetId != null || groupId != null) && !vf.hasPlates() && !vf.hasCodes()) {
             return Page.empty(pageable);
         }
 
         // 2) Normalizar alertTypes
         Set<String> typesNorm = null;
         if (alertTypes != null && !alertTypes.isEmpty()) {
-            typesNorm = alertTypes.stream()
-                    .filter(s -> s != null && !s.isBlank())
+            Set<String> t = alertTypes.stream()
+                    .filter(Objects::nonNull)
                     .map(String::trim)
+                    .filter(s -> !s.isBlank())
                     .collect(Collectors.toSet());
-            if (typesNorm.isEmpty()) typesNorm = null;
+            if (!t.isEmpty()) typesNorm = t;
         }
 
         // 3) Pageable con sort default si no viene sort
@@ -372,8 +473,12 @@ public class AlertServiceImpl implements AlertService {
             spec = spec.and(AlertSpecifications.alertTypeIn(typesNorm));
         }
 
-        if (vehicleCodes != null && !vehicleCodes.isEmpty()) {
-            spec = spec.and(AlertSpecifications.vehicleCodeIn(vehicleCodes));
+        // ✅ principal: placa
+        if (vf.hasPlates()) {
+            spec = spec.and(AlertSpecifications.licensePlateIn(vf.plates()));
+        } else if (vf.hasCodes()) {
+            // fallback: code
+            spec = spec.and(AlertSpecifications.vehicleCodeIn(vf.codes()));
         }
 
         if (acknowledged != null) {
@@ -388,15 +493,7 @@ public class AlertServiceImpl implements AlertService {
             spec = spec.and(AlertSpecifications.eventTimeTo(to));
         }
 
-        // 5) Ejecutar query y mapear
         return alertRepository.findAll(spec, effectivePageable)
                 .map(alertMapper::toSummaryDto);
     }
-
-    private Set<String> intersect(Set<String> a, Set<String> b) {
-        Set<String> res = new HashSet<>(a);
-        res.retainAll(b);
-        return res;
-    }
-
 }

@@ -10,30 +10,25 @@ import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Set;
 
-public interface    AlertRepository extends JpaRepository<AlertModel, Long>, JpaSpecificationExecutor<AlertModel> {
+public interface AlertRepository extends JpaRepository<AlertModel, Long>, JpaSpecificationExecutor<AlertModel> {
 
-    // Total de alertas en un dia
+    // Total de alertas en un dia (empresa)
     long countByCompany_IdAndEventTimeGreaterThanEqualAndEventTimeLessThan(
             Long companyId,
             ZonedDateTime fromInclusive,
             ZonedDateTime toExclusive
     );
 
-    /**
-     * Historial de alertas para una lista de montacargas
-     * de una empresa concreta, ordenado de más reciente a más antiguo.
-     *
-     * Usado para: pantalla de historial de un grupo.
-     */
+    // =========================
+    // HISTORIAL por VEHICLE CODE
+    // =========================
+
     Page<AlertModel> findByCompanyIdAndVehicleCodeInOrderByEventTimeDesc(
             Long companyId,
             Collection<String> vehicleCodes,
             Pageable pageable
     );
 
-    /**
-     * Historial filtrado por rango de fechas (empresa + vehículos).
-     */
     Page<AlertModel> findByCompanyIdAndVehicleCodeInAndEventTimeBetweenOrderByEventTimeDesc(
             Long companyId,
             Collection<String> vehicleCodes,
@@ -42,37 +37,11 @@ public interface    AlertRepository extends JpaRepository<AlertModel, Long>, Jpa
             Pageable pageable
     );
 
-    /**
-     * Listar todas las alertas de una empresa, ordenadas por fecha.
-     * (útil para el panel principal de Alerty por compañía).
-     */
-    Page<AlertModel> findByCompanyIdOrderByEventTimeDesc(
-            Long companyId,
-            Pageable pageable
-    );
-
-    /**
-     * KPI: cuántas alertas han ocurrido desde un instante dado
-     * (ej: now - 24h) para una lista de montacargas de una empresa.
-     */
     long countByCompanyIdAndVehicleCodeInAndEventTimeAfter(
             Long companyId,
             Collection<String> vehicleCodes,
             ZonedDateTime cutoff
     );
-
-    long countByCompanyIdAndLicensePlateInAndEventTimeAfter(Long companyId, Set<String> licensePlates, ZonedDateTime cutoff);
-
-    /**
-     * KPI: cuántas alertas totales en las últimas 24h para una empresa
-     * (por si quieres un dashboard general).
-     */
-    long countByCompanyIdAndEventTimeAfter(
-            Long companyId,
-            ZonedDateTime cutoff
-    );
-
-    long countByCompany_Id(Long companyId);
 
     long countByCompany_IdAndVehicleCodeInAndEventTimeGreaterThanEqualAndEventTimeLessThan(
             Long companyId,
@@ -80,4 +49,51 @@ public interface    AlertRepository extends JpaRepository<AlertModel, Long>, Jpa
             ZonedDateTime from,
             ZonedDateTime to
     );
+
+    // =========================
+    // HISTORIAL por LICENSE PLATE (✅ NUEVO, PRINCIPAL)
+    // =========================
+
+    Page<AlertModel> findByCompanyIdAndLicensePlateInOrderByEventTimeDesc(
+            Long companyId,
+            Collection<String> licensePlates,
+            Pageable pageable
+    );
+
+    Page<AlertModel> findByCompanyIdAndLicensePlateInAndEventTimeBetweenOrderByEventTimeDesc(
+            Long companyId,
+            Collection<String> licensePlates,
+            ZonedDateTime from,
+            ZonedDateTime to,
+            Pageable pageable
+    );
+
+    long countByCompanyIdAndLicensePlateInAndEventTimeAfter(
+            Long companyId,
+            Collection<String> licensePlates,
+            ZonedDateTime cutoff
+    );
+
+    long countByCompanyIdAndLicensePlateInAndEventTimeGreaterThanEqualAndEventTimeLessThan(
+            Long companyId,
+            Collection<String> licensePlates,
+            ZonedDateTime from,
+            ZonedDateTime to
+    );
+
+    // =========================
+    // Empresa general
+    // =========================
+
+    Page<AlertModel> findByCompanyIdOrderByEventTimeDesc(
+            Long companyId,
+            Pageable pageable
+    );
+
+    long countByCompanyIdAndEventTimeAfter(
+            Long companyId,
+            ZonedDateTime cutoff
+    );
+
+    long countByCompany_Id(Long companyId);
 }
