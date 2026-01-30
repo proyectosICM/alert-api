@@ -47,6 +47,16 @@ public class NotificationGroupModel {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
+            name = "notification_group_vehicle_plates",
+            joinColumns = @JoinColumn(name = "group_id",
+                    foreignKey = @ForeignKey(name = "fk_group_vehicle_plates_group"))
+    )
+    @Column(name = "license_plate_norm", length = 50, nullable = false)
+    @Builder.Default
+    private Set<String> vehiclePlates = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
             name = "notification_group_vehicle_codes",
             joinColumns = @JoinColumn(
                     name = "group_id",

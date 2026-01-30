@@ -47,6 +47,24 @@ public class FleetModel {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
+            name = "fleet_vehicle_plates",
+            joinColumns = @JoinColumn(
+                    name = "fleet_id",
+                    foreignKey = @ForeignKey(name = "fk_fleet_vehicle_plate")
+            ),
+            uniqueConstraints = {
+                    @UniqueConstraint(
+                            name = "uk_fleet_vehicle_plate",
+                            columnNames = {"fleet_id", "license_plate_norm"}
+                    )
+            }
+    )
+    @Column(name = "license_plate_norm", nullable = false, length = 50)
+    @Builder.Default
+    private Set<String> vehiclePlates = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(
             name = "fleet_vehicle_codes",
             joinColumns = @JoinColumn(
                     name = "fleet_id",

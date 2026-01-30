@@ -22,6 +22,7 @@ public interface NotificationGroupMapper {
             target = "active",
             expression = "java(request.getActive() != null ? request.getActive() : true)"
     )
+    @Mapping(target = "vehiclePlates", ignore = true)
     // inicializamos siempre el Set de vehicleCodes
     @Mapping(
             target = "vehicleCodes",
@@ -41,6 +42,7 @@ public interface NotificationGroupMapper {
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "vehiclePlates", ignore = true)
     @Mapping(target = "vehicleCodes", ignore = true) // lo manejamos a mano
     void updateEntityFromDto(UpdateGroupRequest request,
                              @MappingTarget NotificationGroupModel entity);

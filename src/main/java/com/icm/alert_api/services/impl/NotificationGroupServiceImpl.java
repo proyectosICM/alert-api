@@ -19,8 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,6 +67,8 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
         model.setCompany(company);
 
         NotificationGroupModel saved = groupRepository.save(model);
+        model.setVehiclePlates(normalizePlates(request.getVehiclePlates()));
+        model.setVehicleCodes(normalizeCodes(request.getVehicleCodes()));
 
         long usersCount = 0L; // recién creado, aún sin usuarios asociados
         long alertsLast24h = resolveAlertsLast24h(saved);
@@ -90,6 +92,13 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
 
         // patch con MapStruct
         groupMapper.updateEntityFromDto(request, model);
+
+        if (request.getVehiclePlates() != null) {
+            model.setVehiclePlates(normalizePlates(request.getVehiclePlates()));
+        }
+        if (request.getVehicleCodes() != null) {
+            model.setVehicleCodes(normalizeCodes(request.getVehicleCodes()));
+        }
 
         NotificationGroupModel updated = groupRepository.save(model);
 
@@ -142,5 +151,46 @@ public class NotificationGroupServiceImpl implements NotificationGroupService {
             long alertsLast24h = resolveAlertsLast24h(model);
             return groupMapper.toSummaryDto(model, usersCount, alertsLast24h);
         });
+    }
+
+    // ============== Helpers de normalización ==============
+
+    private Set<String> normalizePlates(Collection<String> plates) {
+        if (plates == null) return new HashSet<>();
+
+        return plates.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .map(this::normalizePlate)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String normalizePlate(String s) {
+        // UPPER + quitar espacios + quitar guiones
+        String x = s.trim().toUpperCase();
+        x = x.replaceAll("\\s+", "");
+        x = x.replace("-", "");
+        return x;
+    }
+
+    private Set<String> normalizeCodes(Collection<String> codes) {
+        if (codes == null) return new HashSet<>();
+
+        return codes.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .map(this::normalizeCode)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String normalizeCode(String s) {
+        // igual que tu backend: trim + upper + quitar espacios internos
+        String x = s.trim().toUpperCase();
+        x = x.replaceAll("\\s+", "");
+        return x;
     }
 }

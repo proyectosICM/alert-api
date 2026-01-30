@@ -20,6 +20,8 @@ public class UpdateGroupRequest {
 
     private Boolean active;
 
+    private Set<String> vehiclePlates;
+
     @Size(max = 500)
     private Set<@Size(max = 50) String> vehicleCodes;
 }

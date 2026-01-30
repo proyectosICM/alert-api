@@ -25,8 +25,16 @@ public class UpdateFleetRequest {
     private Boolean active;
 
     /**
-     * Si lo envías, reemplaza el set completo (PATCH “replace”).
-     * Si es null, no toca los vehicleCodes.
+     * PRINCIPAL: placas.
+     * Si lo envías, reemplaza el set completo.
+     * Si es null, no toca vehiclePlates.
+     */
+    private Set<@Size(max = 50) String> vehiclePlates;
+
+    /**
+     * OPCIONAL/LEGACY: códigos.
+     * Si lo envías, reemplaza el set completo.
+     * Si es null, no toca vehicleCodes.
      */
     private Set<@Size(max = 50) String> vehicleCodes;
 }

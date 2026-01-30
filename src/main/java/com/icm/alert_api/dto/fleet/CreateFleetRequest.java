@@ -26,7 +26,14 @@ public class CreateFleetRequest {
     private Boolean active;
 
     /**
-     * Opcional. Si viene, se asignan los vehículos desde la creación.
+     * PRINCIPAL: placas (ideal para filtros).
+     * Se recomienda normalizar en backend: trim + upper + quitar espacios/guiones.
+     */
+    private Set<@NotBlank @Size(max = 50) String> vehiclePlates;
+
+    /**
+     * OPCIONAL/LEGACY: códigos internos (si un vehículo no tiene placa).
+     * Se recomienda normalizar en backend: trim + upper + quitar espacios internos.
      */
     private Set<@NotBlank @Size(max = 50) String> vehicleCodes;
 }

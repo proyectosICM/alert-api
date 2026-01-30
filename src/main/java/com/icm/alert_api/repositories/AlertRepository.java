@@ -61,6 +61,8 @@ public interface    AlertRepository extends JpaRepository<AlertModel, Long>, Jpa
             ZonedDateTime cutoff
     );
 
+    long countByCompanyIdAndLicensePlateInAndEventTimeAfter(Long companyId, Set<String> licensePlates, ZonedDateTime cutoff);
+
     /**
      * KPI: cuántas alertas totales en las últimas 24h para una empresa
      * (por si quieres un dashboard general).

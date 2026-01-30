@@ -48,6 +48,15 @@ public interface FleetRepository extends JpaRepository<FleetModel, Long> {
            """)
     List<String> findVehicleCodes(Long companyId, Long fleetId);
 
+    @Query("""
+           select vp
+           from FleetModel f
+           join f.vehiclePlates vp
+           where f.id = :fleetId
+             and f.company.id = :companyId
+           """)
+    List<String> findVehiclePlates(Long companyId, Long fleetId);
+
     /**
      * Traer vehicleCodes de múltiples flotas (por si luego permites filtros multi-flota).
      */
@@ -59,4 +68,13 @@ public interface FleetRepository extends JpaRepository<FleetModel, Long> {
              and f.id in :fleetIds
            """)
     List<String> findVehicleCodesByFleetIds(Long companyId, Collection<Long> fleetIds);
+
+    @Query("""
+           select distinct vp
+           from FleetModel f
+           join f.vehiclePlates vp
+           where f.company.id = :companyId
+             and f.id in :fleetIds
+           """)
+    List<String> findVehiclePlatesByFleetIds(Long companyId, Collection<Long> fleetIds);
 }

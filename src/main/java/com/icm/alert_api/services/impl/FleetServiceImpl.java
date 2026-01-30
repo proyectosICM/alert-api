@@ -43,16 +43,26 @@ public class FleetServiceImpl implements FleetService {
         FleetModel model = fleetMapper.toEntity(request);
         model.setCompany(company);
 
-        // Default active=true si no viene en request
         if (request.getActive() == null) {
             model.setActive(true);
         }
 
-        // Normalizar vehicleCodes (trim + remover vacíos)
-        if (model.getVehicleCodes() != null) {
-            model.setVehicleCodes(normalizeVehicleCodes(model.getVehicleCodes()));
+        // Normalizar placas (principal)
+        if (request.getVehiclePlates() != null) {
+            model.setVehiclePlates(normalizeVehiclePlates(request.getVehiclePlates()));
+        } else if (model.getVehiclePlates() == null) {
+            model.setVehiclePlates(new HashSet<>());
         } else {
+            model.setVehiclePlates(normalizeVehiclePlates(model.getVehiclePlates()));
+        }
+
+        // Normalizar códigos (opcional)
+        if (request.getVehicleCodes() != null) {
+            model.setVehicleCodes(normalizeVehicleCodes(request.getVehicleCodes()));
+        } else if (model.getVehicleCodes() == null) {
             model.setVehicleCodes(new HashSet<>());
+        } else {
+            model.setVehicleCodes(normalizeVehicleCodes(model.getVehicleCodes()));
         }
 
         FleetModel saved = fleetRepository.save(model);
@@ -76,7 +86,12 @@ public class FleetServiceImpl implements FleetService {
         // PATCH (ignora nulls)
         fleetMapper.updateEntityFromDto(request, model);
 
-        // Si mandaron vehicleCodes en el PATCH => reemplaza el set completo
+        // Si mandaron vehiclePlates en el PATCH => reemplaza set completo
+        if (request.getVehiclePlates() != null) {
+            model.setVehiclePlates(normalizeVehiclePlates(request.getVehiclePlates()));
+        }
+
+        // Si mandaron vehicleCodes en el PATCH => reemplaza set completo
         if (request.getVehicleCodes() != null) {
             model.setVehicleCodes(normalizeVehicleCodes(request.getVehicleCodes()));
         }
@@ -119,10 +134,11 @@ public class FleetServiceImpl implements FleetService {
         return page.map(fleetMapper::toSummaryDto);
     }
 
-    // ================= Asignación de vehículos =================
+    // ================= Asignación de vehículos (placas principal, códigos opcional) =================
 
     @Override
     public FleetDetailDto addVehicles(Long companyId, Long fleetId, Set<String> vehicleCodes) {
+        // DEPRECADO si vas a migrar a placas, pero lo dejo por compatibilidad.
         if (vehicleCodes == null || vehicleCodes.isEmpty()) {
             throw new IllegalArgumentException("vehicleCodes is required");
         }
@@ -141,6 +157,31 @@ public class FleetServiceImpl implements FleetService {
         }
 
         model.getVehicleCodes().addAll(normalized);
+
+        FleetModel saved = fleetRepository.save(model);
+        return fleetMapper.toDetailDto(saved);
+    }
+
+    // NUEVO: add plates
+    public FleetDetailDto addPlates(Long companyId, Long fleetId, Set<String> vehiclePlates) {
+        if (vehiclePlates == null || vehiclePlates.isEmpty()) {
+            throw new IllegalArgumentException("vehiclePlates is required");
+        }
+
+        FleetModel model = fleetRepository.findById(fleetId)
+                .orElseThrow(() -> new IllegalArgumentException("Fleet not found: " + fleetId));
+
+        if (!model.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Fleet does not belong to company: " + companyId);
+        }
+
+        Set<String> normalized = normalizeVehiclePlates(vehiclePlates);
+
+        if (model.getVehiclePlates() == null) {
+            model.setVehiclePlates(new HashSet<>());
+        }
+
+        model.getVehiclePlates().addAll(normalized);
 
         FleetModel saved = fleetRepository.save(model);
         return fleetMapper.toDetailDto(saved);
@@ -169,8 +210,32 @@ public class FleetServiceImpl implements FleetService {
         return fleetMapper.toDetailDto(saved);
     }
 
+    // NUEVO: remove plates
+    public FleetDetailDto removePlates(Long companyId, Long fleetId, Set<String> vehiclePlates) {
+        if (vehiclePlates == null || vehiclePlates.isEmpty()) {
+            throw new IllegalArgumentException("vehiclePlates is required");
+        }
+
+        FleetModel model = fleetRepository.findById(fleetId)
+                .orElseThrow(() -> new IllegalArgumentException("Fleet not found: " + fleetId));
+
+        if (!model.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Fleet does not belong to company: " + companyId);
+        }
+
+        Set<String> normalized = normalizeVehiclePlates(vehiclePlates);
+
+        if (model.getVehiclePlates() != null && !model.getVehiclePlates().isEmpty()) {
+            model.getVehiclePlates().removeAll(normalized);
+        }
+
+        FleetModel saved = fleetRepository.save(model);
+        return fleetMapper.toDetailDto(saved);
+    }
+
     @Override
     public FleetDetailDto replaceVehicles(Long companyId, Long fleetId, Set<String> vehicleCodes) {
+        // compat: reemplaza códigos
         FleetModel model = fleetRepository.findById(fleetId)
                 .orElseThrow(() -> new IllegalArgumentException("Fleet not found: " + fleetId));
 
@@ -188,14 +253,46 @@ public class FleetServiceImpl implements FleetService {
         return fleetMapper.toDetailDto(saved);
     }
 
+    // NUEVO: replace plates
+    public FleetDetailDto replacePlates(Long companyId, Long fleetId, Set<String> vehiclePlates) {
+        FleetModel model = fleetRepository.findById(fleetId)
+                .orElseThrow(() -> new IllegalArgumentException("Fleet not found: " + fleetId));
+
+        if (!model.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Fleet does not belong to company: " + companyId);
+        }
+
+        Set<String> normalized = (vehiclePlates == null)
+                ? new HashSet<>()
+                : normalizeVehiclePlates(vehiclePlates);
+
+        model.setVehiclePlates(normalized);
+
+        FleetModel saved = fleetRepository.save(model);
+        return fleetMapper.toDetailDto(saved);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<String> getVehicleCodes(Long companyId, Long fleetId) {
-        // Esto evita cargar toda la entidad (si tu repo tiene el @Query)
         List<String> codes = fleetRepository.findVehicleCodes(companyId, fleetId);
         if (codes == null) return List.of();
 
         return codes.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    // NUEVO: get plates
+    @Transactional(readOnly = true)
+    public List<String> getVehiclePlates(Long companyId, Long fleetId) {
+        List<String> plates = fleetRepository.findVehiclePlates(companyId, fleetId);
+        if (plates == null) return List.of();
+
+        return plates.stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
@@ -212,6 +309,33 @@ public class FleetServiceImpl implements FleetService {
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
-                .collect(Collectors.toCollection(HashSet::new));
+                .map(this::normalizeCode)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String normalizeCode(String s) {
+        // trim + upper + quitar espacios internos
+        String x = s.trim().toUpperCase();
+        x = x.replaceAll("\\s+", "");
+        return x;
+    }
+
+    private Set<String> normalizeVehiclePlates(Collection<String> plates) {
+        if (plates == null) return new HashSet<>();
+
+        return plates.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .map(this::normalizePlate)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String normalizePlate(String s) {
+        // UPPER + sin espacios + sin guiones
+        String x = s.trim().toUpperCase();
+        x = x.replaceAll("\\s+", "");
+        x = x.replace("-", "");
+        return x;
     }
 }
