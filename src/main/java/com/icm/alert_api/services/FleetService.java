@@ -47,4 +47,6 @@ public interface FleetService {
      * Resolver SOLO los vehicleCodes de la flota (para filtros de alertas).
      */
     List<String> getVehicleCodes(Long companyId, Long fleetId);
+
+    List<String> getVehiclePlates(Long companyId, Long fleetId);
 }

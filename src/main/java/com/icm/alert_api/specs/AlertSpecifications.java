@@ -18,6 +18,10 @@ public final class AlertSpecifications {
         return (root, query, cb) -> root.get("vehicleCode").in(vehicleCodes);
     }
 
+    public static Specification<AlertModel> licensePlateIn(Collection<String> licensePlates) {
+        return (root, query, cb) -> root.get("licensePlate").in(licensePlates);
+    }
+
     public static Specification<AlertModel> alertTypeIn(Collection<String> types) {
         return (root, query, cb) -> root.get("alertType").in(types);
     }
