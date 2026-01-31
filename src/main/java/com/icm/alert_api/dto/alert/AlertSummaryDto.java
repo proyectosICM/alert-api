@@ -23,9 +23,9 @@ public class AlertSummaryDto {
     String plant;
     String area;
 
-    /**
-     * Texto corto para mostrar en la lista.
-     */
+    String operatorName;
+    String operatorId;
+
     String shortDescription;
 
     Instant eventTime;
