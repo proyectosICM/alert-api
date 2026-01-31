@@ -41,7 +41,7 @@ public class AlertServiceImpl implements AlertService {
     private final AlertMapper alertMapper;
 
     private final GroupUserRepository groupUserRepository;
-    private final UserRepository us erRepository;
+    private final UserRepository userRepository;
     private final FleetService fleetService;
 
     // ============================================================
