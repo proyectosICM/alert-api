@@ -45,6 +45,7 @@ public class WebSecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://telemetriaperu.com:3010",
                 "http://localhost:3000",
+                "http://localhost:8081",
                 "https://localhost:3000",
                 "http://192.168.1.232:3000",
                 "https://samloto.com:3012"
@@ -71,6 +72,7 @@ public class WebSecurityConfig {
                 "Access-Control-Allow-Origin",
                 "https://samloto.com:3012",
                 "http://localhost:3000",
+                "http://localhost:8081",
                 "https://localhost:3000",
                 "http://192.168.1.232:3003"
         );
