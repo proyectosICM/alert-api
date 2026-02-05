@@ -1,5 +1,6 @@
 package com.icm.alert_api.models;
 
+import com.icm.alert_api.enums.GroupSource;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -44,6 +45,11 @@ public class NotificationGroupModel {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(name = "source", nullable = false, length = 30)
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private GroupSource source = GroupSource.MANUAL;
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(
