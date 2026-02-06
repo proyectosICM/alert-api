@@ -35,6 +35,8 @@ public interface ShiftService {
 
     List<ShiftSummaryDto> listByBatch(Long companyId, String batchId);
 
+    List<ShiftDetailDto> listByDateDetail(Long companyId, LocalDate rosterDate);
+
     // Search (q + filtros)
     Page<ShiftSummaryDto> search(
             Long companyId,

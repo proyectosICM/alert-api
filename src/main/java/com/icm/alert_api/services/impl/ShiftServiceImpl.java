@@ -251,6 +251,18 @@ public class ShiftServiceImpl implements ShiftService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ShiftDetailDto> listByDateDetail(Long companyId, LocalDate rosterDate) {
+        if (companyId == null) throw new IllegalArgumentException("companyId is required");
+        if (rosterDate == null) throw new IllegalArgumentException("rosterDate is required");
+
+        return shiftRepository.findByCompany_IdAndRosterDateOrderByShiftNameAsc(companyId, rosterDate)
+                .stream()
+                .map(shiftMapper::toDetailDto)
+                .toList();
+    }
+
     // =========================
     // Search
     // =========================

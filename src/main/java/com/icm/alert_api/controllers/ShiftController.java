@@ -97,6 +97,14 @@ public class ShiftController {
         return shiftService.listByBatch(companyId, batchId);
     }
 
+    @GetMapping("/date/detail")
+    public List<ShiftDetailDto> listByDateDetail(
+            @RequestParam("companyId") Long companyId,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return shiftService.listByDateDetail(companyId, date);
+    }
+
     @GetMapping("/search")
     public Page<ShiftSummaryDto> search(
             @RequestParam("companyId") Long companyId,
