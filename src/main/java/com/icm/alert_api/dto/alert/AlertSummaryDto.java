@@ -32,4 +32,5 @@ public class AlertSummaryDto {
     Instant receivedAt;
 
     boolean acknowledged;
+    boolean reviewed;
 }

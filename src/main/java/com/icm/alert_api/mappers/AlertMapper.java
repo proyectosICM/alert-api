@@ -18,12 +18,10 @@ public interface AlertMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "company", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)           // @CreationTimestamp
-    @Mapping(target = "updatedAt", ignore = true)           // @UpdateTimestamp
-    @Mapping(target = "acknowledged", constant = "false")   // recién creada = no atendida
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "acknowledged", constant = "false")
     AlertModel toEntity(CreateAlertRequest request);
-    // Campos como vehicleCode, licensePlate, alertType, plant, etc.
-    // se mapean automáticamente por nombre.
 
     // ======= Update DTO -> Entity (PATCH) =======
 
@@ -32,7 +30,6 @@ public interface AlertMapper {
     @Mapping(target = "company", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-        // acknowledged se actualiza si viene en el request (Boolean)
     void updateEntityFromDto(UpdateAlertRequest request, @MappingTarget AlertModel entity);
 
     // ======= Entity -> Detail DTO =======
@@ -53,11 +50,12 @@ public interface AlertMapper {
             target = "companyName",
             expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
     )
+    // ✅ NUEVO: revisado = existe revision
+    @Mapping(
+            target = "reviewed",
+            expression = "java(model.getRevision() != null)"
+    )
     AlertDetailDto toDetailDto(AlertModel model);
-    // El resto: vehicleCode, licensePlate, alertType, alertSubtype,
-    // templateSource, severity, plant, area, ownerOrVendor, brandModel,
-    // operatorName, operatorId, shortDescription, details, rawPayload,
-    // acknowledged => se mapean por nombre.
 
     // ======= Entity -> Summary DTO =======
 
@@ -76,6 +74,11 @@ public interface AlertMapper {
     @Mapping(
             target = "companyName",
             expression = "java(model.getCompany() != null ? model.getCompany().getName() : null)"
+    )
+    // ✅ NUEVO: revisado = existe revision
+    @Mapping(
+            target = "reviewed",
+            expression = "java(model.getRevision() != null)"
     )
     AlertSummaryDto toSummaryDto(AlertModel model);
 }

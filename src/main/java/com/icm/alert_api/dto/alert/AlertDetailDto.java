@@ -51,4 +51,5 @@ public class AlertDetailDto {
     String rawPayload;        // HTML / texto crudo del correo
 
     boolean acknowledged;
+    boolean reviewed;
 }
