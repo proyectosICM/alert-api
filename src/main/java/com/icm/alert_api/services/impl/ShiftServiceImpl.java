@@ -306,50 +306,69 @@ public class ShiftServiceImpl implements ShiftService {
 
         CompanyModel company = requireCompany(companyId);
 
+        // batch de esta subida
         String batchId = UUID.randomUUID().toString();
 
-        // 1) desactivar current anterior
-        shiftRepository.deactivateCurrent(companyId);
+        // 1) Desactiva SOLO los "current" de ese día (historial queda, solo cambia active)
+        shiftRepository.deactivateCurrentByDate(companyId, rosterDate);
 
-        // 2) construir entidades
-        List<ShiftModel> entities = new ArrayList<>(shifts.size());
-
+        // 2) Para evitar duplicados por mayúsculas/espacios:
+        Map<String, CreateShiftRequest> incomingByName = new LinkedHashMap<>();
         for (CreateShiftRequest req : shifts) {
             if (req == null) continue;
-
             validateShiftName(req.getShiftName());
 
-            ShiftModel model = shiftMapper.toEntity(req);
-            model.setCompany(company);
+            String key = req.getShiftName().trim().toLowerCase();
+            req.setRosterDate(rosterDate);
+            req.setCompanyId(companyId);
 
-            // fuerza rosterDate del batch (viene del Excel)
-            model.setRosterDate(rosterDate);
-
-            // batch único por import
-            model.setBatchId(batchId);
-
-            // current = true
-            model.setActive(true);
-
-            // normalizar listas
-            model.setResponsibleDnis(normalizeDnis(req.getResponsibleDnis()));
-            model.setVehiclePlates(normalizePlates(req.getVehiclePlates()));
-
-            entities.add(model);
+            // si el excel trae repetido el turno, el último gana
+            incomingByName.put(key, req);
         }
 
-        if (entities.isEmpty()) {
-            throw new IllegalArgumentException("No valid shifts to import");
+        // 3) Trae TODOS los turnos existentes de ese día (activos o no) para upsert
+        List<ShiftModel> existing = shiftRepository.findByCompany_IdAndRosterDate(companyId, rosterDate);
+
+        Map<String, ShiftModel> existingByName = new HashMap<>();
+        for (ShiftModel s : existing) {
+            if (s.getShiftName() == null) continue;
+            existingByName.put(s.getShiftName().trim().toLowerCase(), s);
         }
 
-        // 3) guardar todo
-        List<ShiftModel> saved = shiftRepository.saveAll(entities);
+        List<ShiftModel> toSave = new ArrayList<>();
 
-        // (si quieres asegurar timestamps/ids antes de mapear en algunos providers)
-        // shiftRepository.flush();
+        // 4) Upsert: si existe => update, si no => create
+        for (CreateShiftRequest req : incomingByName.values()) {
+            String key = req.getShiftName().trim().toLowerCase();
 
+            ShiftModel model = existingByName.get(key);
+
+            if (model != null) {
+                // UPDATE (mantiene ID e historial)
+                model.setActive(true);
+                model.setBatchId(batchId);
+                model.setRosterDate(rosterDate); // por si acaso
+                model.setResponsibleDnis(normalizeDnis(req.getResponsibleDnis()));
+                model.setVehiclePlates(normalizePlates(req.getVehiclePlates()));
+                // si tienes más campos: actualízalos aquí
+                toSave.add(model);
+            } else {
+                // CREATE
+                ShiftModel created = shiftMapper.toEntity(req);
+                created.setCompany(company);
+                created.setRosterDate(rosterDate);
+                created.setBatchId(batchId);
+                created.setActive(true);
+                created.setResponsibleDnis(normalizeDnis(req.getResponsibleDnis()));
+                created.setVehiclePlates(normalizePlates(req.getVehiclePlates()));
+                toSave.add(created);
+            }
+        }
+
+        List<ShiftModel> saved = shiftRepository.saveAll(toSave);
         return saved.stream().map(shiftMapper::toDetailDto).toList();
     }
+
 
     public void rebuildShiftExcelGroups(Long companyId, List<ShiftDetailDto> importedShifts) {
         if (companyId == null) throw new IllegalArgumentException("companyId is required");
