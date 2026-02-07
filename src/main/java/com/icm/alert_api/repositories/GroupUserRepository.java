@@ -45,4 +45,9 @@ public interface GroupUserRepository extends JpaRepository<GroupUserModel, Long>
     Page<GroupUserModel> searchMembersInGroup(@Param("groupId") Long groupId,
                                               @Param("q") String q,
                                               Pageable pageable);
+
+    long deleteByGroup_Id(Long groupId);
+
+    long deleteByGroup_IdIn(Collection<Long> groupIds);
+
 }

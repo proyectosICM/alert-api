@@ -4,11 +4,13 @@ import com.icm.alert_api.dto.shift.CreateShiftRequest;
 import com.icm.alert_api.dto.shift.ShiftDetailDto;
 import com.icm.alert_api.dto.shift.ShiftSummaryDto;
 import com.icm.alert_api.dto.shift.UpdateShiftRequest;
+import com.icm.alert_api.enums.GroupSource;
 import com.icm.alert_api.mappers.ShiftMapper;
-import com.icm.alert_api.models.CompanyModel;
-import com.icm.alert_api.models.ShiftModel;
+import com.icm.alert_api.models.*;
 import com.icm.alert_api.repositories.CompanyRepository;
+import com.icm.alert_api.repositories.NotificationGroupRepository;
 import com.icm.alert_api.repositories.ShiftRepository;
+import com.icm.alert_api.repositories.UserRepository;
 import com.icm.alert_api.services.ShiftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +31,9 @@ public class ShiftServiceImpl implements ShiftService {
     private final ShiftRepository shiftRepository;
     private final CompanyRepository companyRepository;
     private final ShiftMapper shiftMapper;
+
+    private final NotificationGroupRepository groupRepository;
+    private final UserRepository userRepository;
 
     // =========================
     // Helpers
@@ -343,5 +349,80 @@ public class ShiftServiceImpl implements ShiftService {
         // shiftRepository.flush();
 
         return saved.stream().map(shiftMapper::toDetailDto).toList();
+    }
+
+    public void rebuildShiftExcelGroups(Long companyId, List<ShiftDetailDto> importedShifts) {
+        if (companyId == null) throw new IllegalArgumentException("companyId is required");
+
+        CompanyModel company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
+
+        // 1) borrar grupos temporales anteriores
+        groupRepository.deleteByCompany_IdAndSource(companyId, GroupSource.SHIFT_EXCEL);
+
+        if (importedShifts == null || importedShifts.isEmpty()) return;
+
+        // 2) juntar DNIs de todos los turnos (bulk)
+        Set<String> allDnis = importedShifts.stream()
+                .filter(Objects::nonNull)
+                .flatMap(s -> s.getResponsibleDnis() == null ? Stream.empty() : s.getResponsibleDnis().stream())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(d -> !d.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        Map<String, UserModel> userByDni = userRepository.findUsersByCompanyAndDnis(companyId, allDnis).stream()
+                .filter(u -> u.getDni() != null)
+                .collect(Collectors.toMap(u -> u.getDni().trim(), u -> u, (a,b) -> a));
+
+        // 3) crear grupos por turno + memberships
+        Map<String, Integer> nameCounter = new HashMap<>();
+
+        for (ShiftDetailDto shift : importedShifts) {
+            if (shift == null) continue;
+
+            String rawName = (shift.getShiftName() == null) ? "" : shift.getShiftName().trim();
+            if (rawName.isBlank()) continue;
+
+            // evitar colisión por nombres repetidos en el mismo Excel
+            String name = uniqueName(rawName, nameCounter);
+
+            NotificationGroupModel group = NotificationGroupModel.builder()
+                    .company(company)
+                    .name(name)
+                    .description("Generado desde Excel de turnos")
+                    .active(true)
+                    .source(GroupSource.SHIFT_EXCEL)
+                    .build();
+
+            // memberships
+            if (shift.getResponsibleDnis() != null) {
+                for (String dniRaw : shift.getResponsibleDnis()) {
+                    if (dniRaw == null) continue;
+                    String dni = dniRaw.trim();
+                    if (dni.isBlank()) continue;
+
+                    UserModel user = userByDni.get(dni);
+                    if (user == null) continue; // DNI no existe en usuarios -> lo ignoras o registras warning
+
+                    group.getMemberships().add(GroupUserModel.builder()
+                            .group(group)
+                            .user(user)
+                            .active(true)
+                            .build());
+                }
+            }
+
+            // si no quieres grupos vacíos:
+            if (group.getMemberships().isEmpty()) continue;
+
+            groupRepository.save(group);
+        }
+    }
+
+    private String uniqueName(String base, Map<String, Integer> counter) {
+        int n = counter.getOrDefault(base, 0) + 1;
+        counter.put(base, n);
+        return (n == 1) ? base : base + " (" + n + ")";
     }
 }

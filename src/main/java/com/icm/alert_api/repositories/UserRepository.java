@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,6 +18,14 @@ public interface UserRepository extends JpaRepository<UserModel, Long> {
     Optional<UserModel> findByUsername(String username);
     //Optional<UserModel> findByEmail(String email);
     Optional<UserModel> findByDni(String dni);
+    List<UserModel> findByCompany_IdAndDniIn(Long companyId, Collection<String> dnis);
+    @Query("""
+select u from UserModel u
+where u.company.id = :companyId
+and u.dni in :dnis
+""")
+    List<UserModel> findUsersByCompanyAndDnis(@Param("companyId") Long companyId, @Param("dnis") Collection<String> dnis);
+
 
     Optional<UserModel> findByCompanyIdAndUsernameIgnoreCase(Long companyId, String username);
 

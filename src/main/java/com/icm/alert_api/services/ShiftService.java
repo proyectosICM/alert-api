@@ -54,4 +54,5 @@ public interface ShiftService {
      * - Retorna el detalle de lo importado (ya con ids)
      */
     List<ShiftDetailDto> replaceCurrentBatch(Long companyId, LocalDate rosterDate, List<CreateShiftRequest> shifts);
+    void rebuildShiftExcelGroups(Long companyId, List<ShiftDetailDto> importedShifts);
 }

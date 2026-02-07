@@ -176,8 +176,12 @@ public class ShiftController {
                 throw new IllegalArgumentException("No shifts parsed from Excel");
             }
 
-            // reemplaza current (active=true) por un batch nuevo
-            return shiftService.replaceCurrentBatch(companyId, date, shifts);
+            List<ShiftDetailDto> saved = shiftService.replaceCurrentBatch(companyId, date, shifts);
+
+            // ✅ aquí conectas la creación de grupos temporales
+            shiftService.rebuildShiftExcelGroups(companyId, saved);
+
+            return saved;
 
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);

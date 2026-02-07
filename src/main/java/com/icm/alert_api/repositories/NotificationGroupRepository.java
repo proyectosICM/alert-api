@@ -1,5 +1,6 @@
 package com.icm.alert_api.repositories;
 
+import com.icm.alert_api.enums.GroupSource;
 import com.icm.alert_api.models.NotificationGroupModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,4 +61,8 @@ public interface NotificationGroupRepository extends JpaRepository<NotificationG
         where v = :vehicleCode
     """)
     java.util.List<NotificationGroupModel> findByVehicleCode(String vehicleCode);
+
+    List<NotificationGroupModel> findByCompany_IdAndSource(Long companyId, GroupSource source);
+
+    long deleteByCompany_IdAndSource(Long companyId, GroupSource source);
 }
