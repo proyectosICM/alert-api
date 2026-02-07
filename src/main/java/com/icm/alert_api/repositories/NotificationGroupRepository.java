@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface NotificationGroupRepository extends JpaRepository<NotificationGroupModel, Long> {
@@ -65,4 +66,8 @@ public interface NotificationGroupRepository extends JpaRepository<NotificationG
     List<NotificationGroupModel> findByCompany_IdAndSource(Long companyId, GroupSource source);
 
     long deleteByCompany_IdAndSource(Long companyId, GroupSource source);
+
+    Optional<NotificationGroupModel> findByCompany_IdAndName(Long companyId, String name);
+
+    long deleteByCompany_IdAndName(Long companyId, String name);
 }

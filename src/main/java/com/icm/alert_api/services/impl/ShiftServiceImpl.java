@@ -416,6 +416,7 @@ public class ShiftServiceImpl implements ShiftService {
             // si no quieres grupos vacíos:
             if (group.getMemberships().isEmpty()) continue;
 
+            groupRepository.deleteByCompany_IdAndName(companyId, name);
             groupRepository.save(group);
         }
     }
