@@ -13,8 +13,10 @@ import java.util.List;
 @Table(
         name = "alert_revisions",
         indexes = {
-                @Index(name = "idx_revision_alert_id", columnList = "alert_id"),
                 @Index(name = "idx_revision_company_id", columnList = "company_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_revision_alert_id", columnNames = "alert_id")
         }
 )
 @Getter
@@ -28,10 +30,11 @@ public class AlertRevisionModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @OneToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(
             name = "alert_id",
             nullable = false,
+            unique = true, // <-- clave para que sea 1 a 1
             foreignKey = @ForeignKey(name = "fk_revision_alert")
     )
     private AlertModel alert;

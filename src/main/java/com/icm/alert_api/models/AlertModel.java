@@ -150,6 +150,9 @@ public class AlertModel {
     @Column(nullable = false)
     private boolean acknowledged = false;
 
+    @OneToOne(mappedBy = "alert", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private AlertRevisionModel revision;
+
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false, foreignKey = @ForeignKey(name = "fk_alert_company"))
     private CompanyModel company;
