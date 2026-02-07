@@ -123,4 +123,18 @@ public interface ShiftRepository extends JpaRepository<ShiftModel, Long>, JpaSpe
     // - Si quieres filtrar por "contiene DNI", lo ideal es hacerlo en servicio (post-filter),
     //   o migrar a tablas normales, o a MySQL JSON con JSON_CONTAINS y query nativa.
     // =========================
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+   update ShiftModel s
+   set s.active=false
+   where s.company.id=:companyId
+     and s.rosterDate=:rosterDate
+     and s.active=true
+""")
+    int deactivateCurrentByDate(@Param("companyId") Long companyId,
+                                @Param("rosterDate") LocalDate rosterDate);
+
+    List<ShiftModel> findByCompany_IdAndRosterDate(Long companyId, LocalDate rosterDate);
+
 }
